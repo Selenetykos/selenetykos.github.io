@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
-
   <style>
     :root {
       --moon: #FFFFE3;
@@ -14,6 +13,7 @@
       --panel: rgba(255,255,227,0.05);
       --accent: #7eb8f7;
       --glow: #a78bfa;
+      --warm: #f7c97e;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -37,57 +37,248 @@
     }
     .page-wrap.visible { opacity: 1; transform: translateY(0); }
 
+    /* ── HEADER ── */
     header { text-align: center; padding: 70px 0 50px; }
-    .page-tag { font-family: 'Orbitron', monospace; font-size: 0.65rem; letter-spacing: 0.5em; text-transform: uppercase; color: var(--accent); opacity: 0.7; margin-bottom: 16px; }
-    h1 { font-family: 'Orbitron', monospace; font-size: clamp(1.8rem, 5vw, 3.2rem); font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; background: linear-gradient(135deg, #fff8c0, var(--glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
-    h2.sub { font-family: 'Orbitron', monospace; font-weight: 400; font-size: 0.8rem; letter-spacing: 0.4em; color: var(--accent); opacity: 0.7; text-transform: uppercase; }
+    .page-tag {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem; letter-spacing: 0.5em;
+      text-transform: uppercase; color: var(--accent); opacity: 0.7; margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+      background: linear-gradient(135deg, #fff8c0, var(--glow));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 8px;
+    }
+    h2.sub {
+      font-family: 'Orbitron', monospace;
+      font-weight: 400; font-size: 0.8rem;
+      letter-spacing: 0.4em; color: var(--accent); opacity: 0.7; text-transform: uppercase;
+    }
 
-    nav { display: flex; gap: 16px; justify-content: center; margin: 36px 0 60px; flex-wrap: wrap; }
-    nav a { font-family: 'Orbitron', monospace; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; color: var(--moon); padding: 12px 28px; border: 1px solid rgba(255,255,227,0.2); background: var(--panel); backdrop-filter: blur(8px); border-radius: 2px; transition: 0.3s; }
-    nav a:hover { border-color: var(--accent); color: var(--dark); box-shadow: 0 0 20px rgba(126,184,247,0.3); background: var(--accent); }
+    /* ── NAV ── */
+    nav {
+      display: flex; gap: 16px; justify-content: center;
+      margin: 36px 0 60px; flex-wrap: wrap;
+    }
+    nav a {
+      font-family: 'Orbitron', monospace; font-size: 0.72rem;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      text-decoration: none; color: var(--moon);
+      padding: 12px 28px;
+      border: 1px solid rgba(255,255,227,0.2);
+      background: var(--panel); backdrop-filter: blur(8px); border-radius: 2px;
+      position: relative; overflow: hidden;
+      transition: color 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    nav a::before {
+      content:''; position:absolute; inset:0;
+      background: linear-gradient(135deg, var(--accent), var(--glow));
+      opacity:0; transition: opacity 0.3s;
+    }
+    nav a:hover { border-color: var(--accent); color: var(--dark); box-shadow: 0 0 20px rgba(126,184,247,0.3); }
+    nav a:hover::before { opacity:1; }
+    nav a span { position: relative; z-index: 1; }
 
-    .viewer-wrap { position: relative; border: 1px solid rgba(255,255,227,0.12); border-radius: 4px; overflow: hidden; margin-bottom: 40px; background: #080b14; opacity: 0; transform: translateY(24px); transition: 0.7s ease; }
+    /* ── 3D VIEWER ── */
+    .viewer-wrap {
+      position: relative;
+      border: 1px solid rgba(255,255,227,0.12);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 40px;
+      background: #080b14;
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
     .viewer-wrap.visible { opacity:1; transform: translateY(0); }
 
-    .moon-viewer { height: 500px; position: relative; overflow: hidden; background: #080b14; }
+    .moon-viewer {
+      height: 440px;
+      position: relative; overflow: hidden;
+      background: #080b14;
+    }
     #viewer-canvas { display: block; width: 100%; height: 100%; outline: none; }
     
-    #viewer-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #080b14; z-index: 10; }
-    .vl-spinner { width: 40px; height: 40px; border: 3px solid rgba(126,184,247,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .viewer-label {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-family: 'Orbitron', monospace; font-size: 0.62rem;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(255,255,227,0.25); pointer-events: none; white-space: nowrap;
+      z-index: 5;
+    }
+    #viewer-loading {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      background: #080b14; z-index: 10;
+    }
+    .vl-spinner {
+      width: 32px; height: 32px;
+      border: 2px solid rgba(126,184,247,0.15);
+      border-top-color: #7eb8f7; border-radius: 50%;
+      animation: vlSpin 0.8s linear infinite;
+    }
+    @keyframes vlSpin { to { transform: rotate(360deg); } }
+    .vl-text {
+      font-family: 'Orbitron', monospace; font-size: 0.62rem;
+      letter-spacing: 0.25em; color: rgba(126,184,247,0.5); text-transform: uppercase;
+    }
 
-    .viewer-controls { display: flex; border-top: 1px solid rgba(255,255,227,0.06); }
-    .ctrl-btn { flex: 1; padding: 16px; background: transparent; border: none; border-right: 1px solid rgba(255,255,227,0.06); color: rgba(255,255,227,0.5); font-family: 'Orbitron'; font-size: 0.65rem; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
-    .ctrl-btn:hover { background: rgba(126,184,247,0.1); color: var(--accent); }
+    .viewer-controls {
+      display: flex; gap: 0;
+      border-top: 1px solid rgba(255,255,227,0.06);
+    }
+    .ctrl-btn {
+      flex: 1; padding: 16px;
+      background: transparent; border: none;
+      border-right: 1px solid rgba(255,255,227,0.06);
+      color: rgba(255,255,227,0.5);
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem; letter-spacing: 0.2em;
+      text-transform: uppercase; cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .ctrl-btn:last-child { border-right: none; }
+    .ctrl-btn:hover { background: rgba(126,184,247,0.07); color: var(--accent); }
 
-    .section-divider { display: flex; align-items: center; gap: 16px; margin: 48px 0 28px; }
-    .line { flex:1; height:1px; background: rgba(255,255,227,0.1); }
-    .label { font-family:'Orbitron'; font-size:0.6rem; letter-spacing:0.3em; color:var(--accent); }
+    /* ── INFO CARDS ── */
+    .section-divider {
+      display: flex; align-items: center; gap: 16px; margin: 48px 0 28px;
+    }
+    .section-divider .line { flex:1; height:1px; background: rgba(255,255,227,0.08); }
+    .section-divider .label {
+      font-family:'Orbitron',monospace; font-size:0.62rem;
+      letter-spacing:0.35em; text-transform:uppercase; color:var(--accent); opacity:0.7; white-space:nowrap;
+    }
 
-    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-    .info-card { background: var(--panel); border: 1px solid rgba(255,255,227,0.08); padding: 24px; border-radius: 4px; opacity: 0; transform: translateY(20px); transition: 0.6s; }
-    .info-card.visible { opacity: 1; transform: translateY(0); }
-    .info-card .title { font-family: 'Orbitron'; color: var(--accent); margin-bottom: 10px; font-size: 0.8rem; }
-    .info-card p { font-size: 0.9rem; color: rgba(255,255,227,0.7); line-height: 1.6; }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .info-card {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,227,0.08);
+      border-radius: 4px;
+      padding: 24px 26px;
+      position: relative; overflow: hidden;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.3s;
+    }
+    .info-card.visible { opacity:1; transform:translateY(0); }
+    .info-card:hover { box-shadow: 0 4px 30px rgba(167,139,250,0.1); }
+    .info-card::before {
+      content:''; position:absolute; top:0; left:0;
+      width:3px; height:100%;
+      background: linear-gradient(180deg, var(--glow), var(--accent));
+    }
+    .info-card .icon { font-size:1.8rem; margin-bottom:12px; }
+    .info-card .title {
+      font-family:'Orbitron',monospace; font-size:0.75rem;
+      letter-spacing:0.2em; text-transform:uppercase;
+      color:var(--accent); margin-bottom:10px;
+    }
+    .info-card p {
+      font-size:0.9rem; line-height:1.75;
+      color:rgba(255,255,227,0.75); font-weight:300;
+    }
 
-    .team-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-    .member { background: var(--panel); padding: 20px; border-radius: 4px; text-align: center; min-width: 140px; opacity: 0; transition: 0.6s; }
-    .member.visible { opacity: 1; }
-    .member-name { font-family: 'Orbitron'; font-size: 0.7rem; color: white; margin-top: 10px; }
+    /* ── TEAM ── */
+    .team-grid {
+      display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .member {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,227,0.08);
+      border-radius: 4px;
+      padding: 28px 32px;
+      text-align: center; min-width: 160px;
+      opacity:0; transform:translateY(18px);
+      transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.3s;
+    }
+    .member.visible { opacity:1; transform:translateY(0); }
+    .member:hover { box-shadow: 0 4px 30px rgba(126,184,247,0.1); }
+    .member-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--glow));
+      margin: 0 auto 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+    }
+    .member-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.78rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--moon);
+      margin-bottom: 6px;
+    }
+    .member-role {
+      font-size: 0.78rem; color: rgba(255,255,227,0.4);
+      letter-spacing: 0.05em;
+    }
 
-    #loader { position: fixed; inset: 0; z-index: 9999; background: var(--dark); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: 0.8s; }
+    footer {
+      margin-top: 80px; text-align: center;
+      padding: 28px; border-top: 1px solid rgba(255,255,227,0.08);
+      font-size: 0.78rem; letter-spacing: 0.08em;
+      color: rgba(255,255,227,0.3); font-family: 'Orbitron', monospace;
+    }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--dark);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 32px;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
     #loader.hidden { opacity: 0; visibility: hidden; }
-    .loader-bar-wrap { width: 200px; height: 2px; background: rgba(255,255,227,0.1); }
-    .loader-bar { height: 100%; width: 0%; background: var(--accent); animation: load 2.5s forwards; }
-    @keyframes load { to { width: 100%; } }
-
-    footer { margin-top: 80px; text-align: center; padding: 40px; border-top: 1px solid rgba(255,255,227,0.05); color: rgba(255,255,227,0.3); font-size: 0.7rem; font-family: 'Orbitron'; }
+    .loader-moon {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffff0, #d4d0a8 60%, #9a9070);
+      box-shadow: 0 0 40px 10px rgba(255,255,200,0.3);
+      position: relative;
+      animation: moonSpin 3s linear infinite, moonPulse 2s ease-in-out infinite alternate;
+    }
+    .loader-moon::before {
+      content:''; position:absolute; width:18px; height:18px; border-radius:50%;
+      background: rgba(0,0,0,0.2); top:22px; left:18px;
+    }
+    .loader-moon::after {
+      content:''; position:absolute; width:10px; height:10px; border-radius:50%;
+      background: rgba(0,0,0,0.15); top:50px; left:50px;
+    }
+    @keyframes moonSpin { to { transform: rotate(360deg); } }
+    @keyframes moonPulse {
+      from { box-shadow: 0 0 30px 5px rgba(255,255,200,0.2); }
+      to   { box-shadow: 0 0 60px 20px rgba(255,255,200,0.45); }
+    }
+    .loader-text {
+      font-family: 'Orbitron', monospace; color: var(--moon);
+      font-size: 1rem; letter-spacing: 0.3em; text-transform: uppercase;
+    }
+    .loader-bar-wrap {
+      width: 260px; height: 4px;
+      background: rgba(255,255,227,0.1); border-radius: 2px; overflow: hidden;
+    }
+    .loader-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--glow));
+      border-radius: 2px;
+      animation: loadFill 2.8s ease-out forwards;
+    }
+    @keyframes loadFill { to { width: 100%; } }
   </style>
 </head>
 <body>
 
 <div id="loader">
-  <div style="font-family:'Orbitron'; color:var(--moon); letter-spacing:0.4em;">SELENETYKOS</div>
+  <div class="loader-moon"></div>
+  <div class="loader-text">Chargement de la vue 3D…</div>
   <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
 </div>
 
@@ -110,76 +301,149 @@
       <canvas id="viewer-canvas"></canvas>
       <div id="viewer-loading">
         <div class="vl-spinner"></div>
-        <div id="loading-text" style="font-family:'Orbitron'; font-size:0.6rem; color:var(--accent); margin-top:10px;">PRÉPARATION DU MODÈLE...</div>
+        <div class="vl-text">Chargement du modèle…</div>
       </div>
+      <div class="viewer-label">Selenetykos Base Alpha — clic · rotation &nbsp;|&nbsp; molette · zoom</div>
     </div>
     <div class="viewer-controls">
       <button class="ctrl-btn" onclick="setView('face')">🌕 Face</button>
-      <button class="ctrl-btn" onclick="setView('pole')">🧭 Pôle</button>
+      <button class="ctrl-btn" onclick="setView('pole')">🧭 Pôle Sud</button>
       <button class="ctrl-btn" onclick="setView('orbit')">🛸 Orbite</button>
-      <button class="ctrl-btn" onclick="setView('reset')">🏗️ Reset</button>
+      <button class="ctrl-btn" onclick="setView('base')">🏗️ Base</button>
     </div>
   </div>
 
-  <div class="section-divider"><div class="line"></div><div class="label">// ÉLÉMENTS DE LA BASE</div><div class="line"></div></div>
+  <div id="view-info" style="text-align:center; font-family:'Exo 2',sans-serif; font-size:0.88rem; color:rgba(255,255,227,0.5); margin-bottom:36px; min-height:22px; letter-spacing:0.05em;"></div>
+
+  <div class="section-divider">
+    <div class="line"></div>
+    <div class="label">// Notre base lunaire</div>
+    <div class="line"></div>
+  </div>
 
   <div class="info-grid">
-    <div class="info-card"><div class="title">🏠 Habitations</div><p>Dômes pressurisés avec blindage anti-radiations.</p></div>
-    <div class="info-card"><div class="title">⚡ Énergie</div><p>Réseau de panneaux solaires à haut rendement.</p></div>
-    <div class="info-card"><div class="title">🔬 Recherche</div><p>Laboratoires d'analyse du régolithe lunaire.</p></div>
+    <div class="info-card">
+      <div class="icon">🏠</div>
+      <div class="title">Habitations</div>
+      <p>Dômes gonflables interconnectés, recouverts d'un mélange de régolithe et d'oxyde de magnésium pour protéger contre les radiations.</p>
+    </div>
+    <div class="info-card" style="transition-delay:0.1s">
+      <div class="icon">⚡</div>
+      <div class="title">Énergie</div>
+      <p>Panneaux solaires (~1 tonne) disposés autour de la base, reliés par câbles résistants aux tempêtes de particules.</p>
+    </div>
+    <div class="info-card" style="transition-delay:0.2s">
+      <div class="icon">🔬</div>
+      <div class="title">Laboratoires</div>
+      <p>Dôme principal central accueillant les labos de géologie, biologie et robotique, ainsi que les espaces de stockage.</p>
+    </div>
+    <div class="info-card" style="transition-delay:0.3s">
+      <div class="icon">📡</div>
+      <div class="title">Communications</div>
+      <p>Antennes VHF/UHF aiguillées par satellites pour maintenir un lien permanent avec la Terre, 24h/24.</p>
+    </div>
+    <div class="info-card" style="transition-delay:0.4s">
+      <div class="icon">♻️</div>
+      <div class="title">Recyclage</div>
+      <p>Module dédié à un mini-écosystème autonome : transformation des déchets en eau, O₂ et matière organique.</p>
+    </div>
+    <div class="info-card" style="transition-delay:0.5s">
+      <div class="icon">🚗</div>
+      <div class="title">Mobilité</div>
+      <p>LTV électrique à châssis flexible + pneumatiques résistants à 150°C pour explorer les zones d'extraction d'eau.</p>
+    </div>
   </div>
 
-  <div class="section-divider"><div class="line"></div><div class="label">// L'ÉQUIPE</div><div class="line"></div></div>
+  <div class="section-divider">
+    <div class="line"></div>
+    <div class="label">// L'équipe</div>
+    <div class="line"></div>
+  </div>
+
   <div class="team-grid">
-    <div class="member">👨‍🚀 <div class="member-name">Nathan</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Emile</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Lucas</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Roman</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Liam</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Eliot</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Baptiste</div></div>
-    <div class="member">👨‍🚀 <div class="member-name">Quentin</div></div>
+    <div class="member" style="transition-delay:0s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Nathan</div>
+      <div class="member-role">Web designer/ingénieur</div>
+    </div>
+    <div class="member" style="transition-delay:0.15s">
+      <div class="member-avatar">🔭</div>
+      <div class="member-name">Emile</div>
+      <div class="member-role">Ressources Humaines</div>
+    </div>
+    <div class="member" style="transition-delay:0.3s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Lucas</div>
+      <div class="member-role">Rédacteur en chef</div>
+    </div>
+    <div class="member" style="transition-delay:0.45s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Roman</div>
+      <div class="member-role">Ingénieur/Architecte</div>
+    </div>
+    <div class="member" style="transition-delay:0.6s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Liam</div>
+      <div class="member-role">Modélisateur 3D</div>
+    </div>
+    <div class="member" style="transition-delay:0.75s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Eliot</div>
+      <div class="member-role">Modélisateur 3D</div>
+    </div>
+    <div class="member" style="transition-delay:0.90s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Baptiste</div>
+      <div class="member-role">Architecte d'intérieur</div>
+    </div>
+    <div class="member" style="transition-delay:1.05s">
+      <div class="member-avatar">👨‍🚀</div>
+      <div class="member-name">Quentin</div>
+      <div class="member-role">Ingénieur</div>
+    </div>
   </div>
 
-  <footer>© 2026 SELENETYKOS - PROJET MOON CAMP</footer>
+  <footer>
+    Nathan, Emile, Lucas, Roman, Liam, Eliot, Baptiste et Quentin — Moon Camp — Conception 3D
+  </footer>
 </div>
 
 <script>
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('loader').classList.add('hidden');
-      document.getElementById('main').classList.add('visible');
-    }, 2000);
-  });
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('main').classList.add('visible');
+  }, 3000);
+});
 
-  (function() {
-    const canvas = document.getElementById('stars-canvas');
-    const ctx = canvas.getContext('2d');
-    let stars = [];
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; init(); }
-    function init() {
-      stars = Array.from({length:200}, () => ({
-        x: Math.random()*canvas.width, y: Math.random()*canvas.height,
-        r: Math.random()*1.2, speed: Math.random()*0.005, phase: Math.random()*Math.PI*2
-      }));
-    }
-    function draw(t) {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      stars.forEach(s => {
-        const opacity = 0.2 + Math.abs(Math.sin(t*0.001 + s.phase)) * 0.8;
-        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
-      });
-      requestAnimationFrame(draw);
-    }
-    window.addEventListener('resize', resize);
-    resize(); requestAnimationFrame(draw);
-  })();
+(function() {
+  const canvas = document.getElementById('stars-canvas');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  function init() {
+    stars = Array.from({length:200}, () => ({
+      x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+      r: Math.random()*1.3+0.2, speed: Math.random()*0.004+0.001, phase: Math.random()*Math.PI*2
+    }));
+  }
+  function draw(t) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    stars.forEach(s => {
+      const a = 0.35 + 0.65*Math.abs(Math.sin(t*s.speed+s.phase));
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,220,${a})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); init(); requestAnimationFrame(draw);
+  window.addEventListener('resize', () => { resize(); init(); });
+})();
 
-  const obs = new IntersectionObserver(ents => {
-    ents.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.1 });
-  document.querySelectorAll('.info-card, .member, .viewer-wrap').forEach(el => obs.observe(el));
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.info-card, .member, .viewer-wrap').forEach(el => io.observe(el));
 </script>
 
 <script type="importmap">
@@ -192,94 +456,106 @@
 </script>
 
 <script type="module">
-  import * as THREE from 'three';
-  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-  import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-  const canvas = document.getElementById('viewer-canvas');
-  const container = document.querySelector('.moon-viewer');
-  const loadingText = document.getElementById('loading-text');
+const canvas = document.getElementById('viewer-canvas');
+const container = document.querySelector('.moon-viewer');
+const loadingText = document.querySelector('.vl-text');
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x080b14);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x080b14);
 
-  const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(10, 10, 10);
-  window._camera = camera;
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+camera.position.set(10, 10, 10);
+window._viewer3dCamera = camera;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  window._controls = controls;
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+window._viewer3dControls = controls;
 
-  scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-  const sun = new THREE.DirectionalLight(0xffffff, 2);
-  sun.position.set(5, 10, 7);
-  scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff, 1.8));
+const sun = new THREE.DirectionalLight(0xffffff, 2);
+sun.position.set(5, 10, 7);
+scene.add(sun);
 
-  // --- CONFIGURATION DRACO ---
-  const dracoLoader = new DRACOLoader();
-  // On utilise le décodeur hébergé par Google (plus fiable)
-  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
-  const loader = new GLTFLoader();
-  loader.setDRACOLoader(dracoLoader);
+const loader = new GLTFLoader();
+loader.setDRACOLoader(dracoLoader);
 
-  // CHARGEMENT
-  loader.load('./model.glb', (gltf) => {
-    const model = gltf.scene;
-    
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    model.position.sub(center);
-    scene.add(model);
+loader.load('./model.glb', (gltf) => {
+  const model = gltf.scene;
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  model.position.sub(center);
+  scene.add(model);
 
-    const maxDim = Math.max(size.x, size.y, size.z);
-    camera.position.set(maxDim * 2, maxDim * 2, maxDim * 2);
-    controls.target.set(0, 0, 0);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  camera.position.set(maxDim * 2, maxDim * 2, maxDim * 2);
+  controls.target.set(0, 0, 0);
 
-    document.getElementById('viewer-loading').style.display = 'none';
-    console.log("Modèle chargé avec succès !");
-  }, 
-  (xhr) => {
-    if (xhr.lengthComputable) {
-      const p = Math.round((xhr.loaded / xhr.total) * 100);
-      loadingText.textContent = `TÉLÉCHARGEMENT : ${p}%`;
-    }
-  },
-  (err) => {
-    console.error("ERREUR :", err);
-    loadingText.textContent = "ERREUR DE DÉCODAGE DU MODÈLE";
-    loadingText.style.color = "#ff4444";
-  });
-
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+  document.getElementById('viewer-loading').style.display = 'none';
+}, 
+(xhr) => {
+  if (xhr.lengthComputable) {
+    const p = Math.round((xhr.loaded / xhr.total) * 100);
+    loadingText.textContent = `CHARGEMENT : ${p}%`;
   }
-  animate();
+},
+(err) => {
+  console.error(err);
+  loadingText.textContent = "ERREUR DE CHARGEMENT";
+  loadingText.style.color = "#ff4444";
+});
 
-  window.addEventListener('resize', () => {
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-  });
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
 
-  window.setView = function(type) {
-    if(!window._camera) return;
-    const v = { face:[0,0,15], pole:[0,15,0], orbit:[15,10,15], reset:[10,10,10] };
-    const p = v[type] || v.reset;
-    window._camera.position.set(p[0], p[1], p[2]);
-    window._controls.target.set(0,0,0);
-  };
+window.addEventListener('resize', () => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+// GESTION DES VUES
+const viewInfo = document.getElementById('view-info');
+const views = {
+  face:  { pos:[0,0,15],   desc:"Vue de face — Mer de la Tranquillité" },
+  pole:  { pos:[0,15,2],   desc:"Pôle Sud — Zone d'extraction d'eau" },
+  orbit: { pos:[15,10,15], desc:"Vue orbitale — Approche de la base" },
+  base:  { pos:[6,3,6],    desc:"Vue rapprochée — Emplacement de la base Alpha" }
+};
+
+window.setView = function(v) {
+  if (!window._viewer3dCamera) return;
+  const targetView = views[v] || views.face;
+  const [x,y,z] = targetView.pos;
+  window._viewer3dCamera.position.set(x,y,z);
+  window._viewer3dControls.target.set(0,0,0);
+  
+  if (viewInfo) {
+    viewInfo.style.opacity = '0';
+    setTimeout(() => { 
+      viewInfo.textContent = targetView.desc; 
+      viewInfo.style.opacity='1'; 
+      viewInfo.style.transition='opacity 0.4s'; 
+    }, 200);
+  }
+};
 </script>
-
 </body>
 </html>
