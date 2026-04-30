@@ -216,25 +216,28 @@
   controls.enableDamping = true;
   window._controls = controls;
 
-  scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+  scene.add(new THREE.AmbientLight(0xffffff, 2)); // Lumière plus forte pour être sûr de voir
   const sun = new THREE.DirectionalLight(0xffffff, 2);
   sun.position.set(5, 10, 7);
   scene.add(sun);
 
   const loader = new GLTFLoader();
-  loader.load('model.glb', (gltf) => {
+  
+  // ON FORCE LE CHEMIN RELATIF AVEC ./
+  loader.load('./model.glb', (gltf) => {
+    console.log("SUCCÈS : Modèle chargé dans la scène");
     const model = gltf.scene;
     
-    // CENTRAGE AUTOMATIQUE DU MODÈLE
+    // Centrage
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     model.position.sub(center);
     scene.add(model);
 
-    // Ajuster la caméra à la taille du modèle
+    // Ajustement caméra
     const maxDim = Math.max(size.x, size.y, size.z);
-    camera.position.set(maxDim * 1.5, maxDim * 1.5, maxDim * 1.5);
+    camera.position.set(maxDim * 2, maxDim * 2, maxDim * 2);
     controls.target.set(0, 0, 0);
 
     document.getElementById('viewer-loading').style.display = 'none';
@@ -242,12 +245,15 @@
   (xhr) => {
     if (xhr.lengthComputable) {
       const percent = Math.round((xhr.loaded / xhr.total) * 100);
+      console.log("Progression : " + percent + "%");
       document.querySelector('.vl-text').textContent = `CHARGEMENT : ${percent}%`;
     }
   },
   (err) => {
-    console.error(err);
-    document.querySelector('.vl-text').textContent = "ERREUR : Fichier model.glb introuvable";
+    console.error("ERREUR CRITIQUE : Impossible de trouver model.glb");
+    console.error("Détails de l'erreur :", err);
+    document.querySelector('.vl-text').textContent = "ERREUR : Fichier introuvable";
+    document.querySelector('.vl-text').style.color = "#ff4444";
   });
 
   function animate() {
@@ -263,20 +269,13 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
   });
 
-  // FONCTIONS DE VUE
   window.setView = function(type) {
     if(!window._camera) return;
-    const pos = {
-      face: [0, 0, 10],
-      pole: [0, 10, 0],
-      orbit: [10, 5, 10],
-      reset: [5, 5, 5]
-    };
+    const pos = { face: [0, 0, 10], pole: [0, 10, 0], orbit: [10, 5, 10], reset: [5, 5, 5] };
     const target = pos[type] || pos.reset;
     window._camera.position.set(target[0], target[1], target[2]);
     window._controls.target.set(0, 0, 0);
   };
 </script>
-
 </body>
 </html>
