@@ -96,7 +96,7 @@
     .viewer-wrap.visible { opacity:1; transform: translateY(0); }
 
     .moon-viewer {
-      height: 440px;
+      height: 480px;
       position: relative; overflow: hidden;
       background: #080b14;
     }
@@ -136,7 +136,7 @@
       border-right: 1px solid rgba(255,255,227,0.06);
       color: rgba(255,255,227,0.5);
       font-family: 'Orbitron', monospace;
-      font-size: 0.65rem; letter-spacing: 0.2em;
+      font-size: 0.6rem; letter-spacing: 0.15em;
       text-transform: uppercase; cursor: pointer;
       transition: background 0.2s, color 0.2s;
     }
@@ -306,10 +306,10 @@
       <div class="viewer-label">Selenetykos Base Alpha — clic · rotation &nbsp;|&nbsp; molette · zoom</div>
     </div>
     <div class="viewer-controls">
-      <button class="ctrl-btn" onclick="setView('face')">🌕 Face</button>
-      <button class="ctrl-btn" onclick="setView('pole')">🧭 Pôle Sud</button>
-      <button class="ctrl-btn" onclick="setView('orbit')">🛸 Orbite</button>
-      <button class="ctrl-btn" onclick="setView('base')">🏗️ Base</button>
+      <button class="ctrl-btn" onclick="setView('ensemble')">📡 Ensemble</button>
+      <button class="ctrl-btn" onclick="setView('haut')">🪐 De Haut</button>
+      <button class="ctrl-btn" onclick="setView('face')">🌕 De Face</button>
+      <button class="ctrl-btn" onclick="setView('fusee')">🚀 La Fusée</button>
     </div>
   </div>
 
@@ -469,7 +469,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x080b14);
 
 const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-camera.position.set(10, 10, 10);
+camera.position.set(12, 10, 12);
 window._viewer3dCamera = camera;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -479,6 +479,9 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+// AUTO-TURN : Rotation automatique activée
+controls.autoRotate = true; 
+controls.autoRotateSpeed = 0.8; // Vitesse lente et fluide
 window._viewer3dControls = controls;
 
 scene.add(new THREE.AmbientLight(0xffffff, 1.8));
@@ -501,7 +504,7 @@ loader.load('./model.glb', (gltf) => {
   scene.add(model);
 
   const maxDim = Math.max(size.x, size.y, size.z);
-  camera.position.set(maxDim * 2, maxDim * 2, maxDim * 2);
+  camera.position.set(maxDim * 1.8, maxDim * 1.5, maxDim * 1.8);
   controls.target.set(0, 0, 0);
 
   document.getElementById('viewer-loading').style.display = 'none';
@@ -520,7 +523,7 @@ loader.load('./model.glb', (gltf) => {
 
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  controls.update(); // Important pour l'autoRotate
   renderer.render(scene, camera);
 }
 animate();
@@ -531,22 +534,31 @@ window.addEventListener('resize', () => {
   renderer.setSize(container.clientWidth, container.clientHeight);
 });
 
-// GESTION DES VUES
+// GESTION DES VUES MISES À JOUR
 const viewInfo = document.getElementById('view-info');
 const views = {
-  face:  { pos:[0,0,15],   desc:"Vue de face — Mer de la Tranquillité" },
-  pole:  { pos:[0,15,2],   desc:"Pôle Sud — Zone d'extraction d'eau" },
-  orbit: { pos:[15,10,15], desc:"Vue orbitale — Approche de la base" },
-  base:  { pos:[6,3,6],    desc:"Vue rapprochée — Emplacement de la base Alpha" }
+  ensemble: { pos:[15, 10, 15], desc:"Vue d'ensemble de la base Selenetykos" },
+  haut:     { pos:[0.1, 20, 0.1], desc:"Survol zénithal de l'installation" },
+  face:     { pos:[0, 2, 16],    desc:"Vue frontale des modules d'habitation" },
+  fusee:    { pos:[6, 4, -6],    desc:"Focus sur le module de transport lourd" }
 };
 
 window.setView = function(v) {
   if (!window._viewer3dCamera) return;
-  const targetView = views[v] || views.face;
+  const targetView = views[v] || views.ensemble;
   const [x,y,z] = targetView.pos;
+  
+  // Désactive temporairement l'auto-rotation quand on clique sur un bouton pour bien voir l'angle
+  window._viewer3dControls.autoRotate = false;
+  
   window._viewer3dCamera.position.set(x,y,z);
   window._viewer3dControls.target.set(0,0,0);
   
+  // Relance l'auto-rotation après 5 secondes d'inactivité sur le bouton
+  setTimeout(() => {
+    window._viewer3dControls.autoRotate = true;
+  }, 5000);
+
   if (viewInfo) {
     viewInfo.style.opacity = '0';
     setTimeout(() => { 
