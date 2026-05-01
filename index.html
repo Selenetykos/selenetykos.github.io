@@ -765,6 +765,7 @@
 </div>
 
 <script>
+// --- SYSTÈME DE TOUCHES SECRETES ---
 let inputSequence = "";
 const secretCode = " sely"; // Espace + S + E + L + Y
 
@@ -777,6 +778,7 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
+// --- LOGIQUE DU MINI-JEU AMÉLIORÉE ---
 let canvas, ctx, player, obstacles, score, gameActive;
 
 function initGame() {
@@ -786,41 +788,109 @@ function initGame() {
     obstacles = [];
     score = 0;
     gameActive = true;
-    window.addEventListener("keydown", (e) => {
-        if(e.key === "ArrowLeft" && player.x > 0) player.x -= 25;
-        if(e.key === "ArrowRight" && player.x < canvas.width - 30) player.x += 25;
-    });
+    
+    // Contrôles (On s'assure qu'ils ne s'ajoutent pas plusieurs fois)
+    window.removeEventListener("keydown", movePlayer); 
+    window.addEventListener("keydown", movePlayer);
     animate();
+}
+
+function movePlayer(e) {
+    if(e.key === "ArrowLeft" && player.x > 0) player.x -= 25;
+    if(e.key === "ArrowRight" && player.x < canvas.width - 30) player.x += 25;
+}
+
+function drawRocket(x, y) {
+    // Corps de la fusée (Gris métal)
+    ctx.fillStyle = "#E0E0E0"; 
+    ctx.fillRect(x + 7, y + 10, 16, 30);
+    
+    // Pointe (Rouge Selenetykos)
+    ctx.fillStyle = "#FF3D00"; 
+    ctx.beginPath();
+    ctx.moveTo(x + 15, y);
+    ctx.lineTo(x + 7, y + 10);
+    ctx.lineTo(x + 23, y + 10);
+    ctx.fill();
+
+    // Ailerons latéraux
+    ctx.fillStyle = "#FF3D00";
+    ctx.fillRect(x + 2, y + 32, 5, 12); // Gauche
+    ctx.fillRect(x + 23, y + 32, 5, 12); // Droite
+
+    // Hublot (Bleu ciel)
+    ctx.fillStyle = "#00d4ff";
+    ctx.beginPath();
+    ctx.arc(x + 15, y + 20, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Flammes réactives
+    ctx.fillStyle = Math.random() > 0.5 ? "orange" : "yellow";
+    ctx.fillRect(x + 10, y + 40, 10, 15);
 }
 
 function animate() {
     if (!gameActive) return;
-    ctx.fillStyle = "black";
+    
+    // Fond de l'espace profond
+    ctx.fillStyle = "#050510";
     ctx.fillRect(0,0, canvas.width, canvas.height);
 
-    // Fusée Selenetykos
-    ctx.fillStyle = "#00d4ff";
-    ctx.beginPath();
-    ctx.moveTo(player.x + 15, player.y);
-    ctx.lineTo(player.x, player.y + 50);
-    ctx.lineTo(player.x + 30, player.y + 50);
-    ctx.fill();
+    // Étoiles défilantes (Effet de vitesse)
+    ctx.fillStyle = "white";
+    for(let i=0; i<15; i++) {
+        let yStar = (Date.now()/5 + i*100) % 600;
+        ctx.fillRect(Math.random()*canvas.width, yStar, 1, 1);
+    }
 
-    // Astéroïdes
+    drawRocket(player.x, player.y);
+
+    // Création des obstacles
     if (Math.random() < 0.04) {
-        obstacles.push({ x: Math.random() * 370, y: -50, size: 25 + Math.random() * 25 });
+        let isPlanet = Math.random() > 0.8;
+        obstacles.push({ 
+            x: Math.random() * (canvas.width - 40), 
+            y: -60, 
+            size: isPlanet ? 40 + Math.random()*20 : 25 + Math.random()*20,
+            type: isPlanet ? 'planet' : 'asteroid',
+            color: isPlanet ? `hsl(${Math.random() * 360}, 60%, 50%)` : '#757575'
+        });
     }
 
     obstacles.forEach((obs, index) => {
-        obs.y += 4 + (score / 100);
-        ctx.fillStyle = "#777";
-        ctx.beginPath();
-        ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI*2);
-        ctx.fill();
+        obs.y += 3.5 + (score / 200); // Accélération progressive
+        
+        ctx.save();
+        ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+        
+        if (obs.type === 'asteroid') {
+            // Dessin Astéroïde avec relief
+            ctx.fillStyle = obs.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, obs.size/2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(0,0,0,0.2)"; // Cratères
+            ctx.beginPath();
+            ctx.arc(-obs.size/5, -obs.size/6, obs.size/6, 0, Math.PI*2);
+            ctx.fill();
+        } else {
+            // Dessin Planète avec ombre
+            ctx.fillStyle = obs.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, obs.size/2, 0, Math.PI*2);
+            ctx.fill();
+            let gradient = ctx.createRadialGradient(-obs.size/4, -obs.size/4, obs.size/10, 0, 0, obs.size/2);
+            gradient.addColorStop(0, "rgba(255,255,255,0.3)");
+            gradient.addColorStop(1, "rgba(0,0,0,0.4)");
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+        ctx.restore();
 
+        // Collision précise
         if (player.x < obs.x + obs.size && player.x + 30 > obs.x && player.y < obs.y + obs.size && player.y + 50 > obs.y) {
             gameActive = false;
-            alert("CRASH ! Score : " + Math.floor(score));
+            alert("Vaisseau Selenetykos perdu dans l'espace ! Score : " + Math.floor(score));
             location.reload();
         }
         if (obs.y > 600) obstacles.splice(index, 1);
