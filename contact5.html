@@ -272,6 +272,91 @@
       animation: loadFill 2.8s ease-out forwards;
     }
     @keyframes loadFill { to { width: 100%; } }
+
+
+    .gallery-btn {
+      background: rgba(126, 184, 247, 0.1) !important;
+      color: var(--accent) !important;
+      border-left: 1px solid rgba(255,255,227,0.12) !important;
+      font-weight: 700;
+    }
+
+    .gallery-btn:hover {
+      background: var(--accent) !important;
+      color: var(--dark) !important;
+    }
+
+    .viewer-controls {
+      display: flex;
+      flex-wrap: wrap; /* Assure la compatibilité sur mobile */
+    }
+
+    .ctrl-btn {
+      flex: 1;
+      min-width: 100px; /* Évite que les boutons soient trop petits */
+    }
+
+    .viewer-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 colonnes égales */
+  border-top: 1px solid rgba(255,255,227,0.1);
+  background: rgba(8, 11, 20, 0.5);
+}
+
+.ctrl-btn-small {
+  padding: 12px 5px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255,255,227,0.05);
+  color: rgba(255,255,227,0.6);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.ctrl-btn-small:hover {
+  background: rgba(126, 184, 247, 0.1);
+  color: var(--accent);
+}
+
+.gallery-accent {
+  color: var(--warm);
+  border-right: none;
+}
+
+/* Style du Gros Bouton de retour en bas */
+.viewer-footer-action {
+  border-top: 1px solid rgba(255,255,227,0.1);
+  padding: 5px;
+  background: rgba(126, 184, 247, 0.03);
+}
+
+.main-reset-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(90deg, rgba(126,184,247,0.05), rgba(167,139,250,0.05));
+  border: 1px solid rgba(126, 184, 247, 0.2);
+  color: var(--accent);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  border-radius: 2px;
+}
+
+.main-reset-btn:hover {
+  background: var(--accent);
+  color: var(--dark);
+  box-shadow: 0 0 20px rgba(126, 184, 247, 0.4);
+  letter-spacing: 5px; /* Petit effet d'étirement au survol */
+}
   </style>
 </head>
 <body>
@@ -303,9 +388,23 @@
         <div class="vl-spinner"></div>
         <div class="vl-text">Chargement du modèle…</div>
       </div>
-      <div class="viewer-label">Selenetykos Base Alpha — clic · rotation &nbsp;|&nbsp; molette · zoom</div>
+      <div class="viewer-label">Exploration Selenetykos — contrôles actifs</div>
     </div>
 
+  <div class="viewer-controls-grid">
+    <button class="ctrl-btn-small" onclick="setView('ensemble')">Base</button>
+    <button class="ctrl-btn-small" onclick="setView('haut')">Zénith</button>
+    <button class="ctrl-btn-small" onclick="setView('face')">Quartiers</button>
+    <button class="ctrl-btn-small" onclick="setView('fusee')">Dock</button>
+    <a href="galerie.html" class="ctrl-btn-small gallery-accent">📷 Galerie</a>
+  </div>
+
+  <div class="viewer-footer-action">
+    <button class="main-reset-btn" onclick="setView('ensemble')">
+      <span>RETOUR À LA MODÉLISATION GLOBALE</span>
+    </button>
+  </div>
+</div>
 
   <div id="view-info" style="text-align:center; font-family:'Exo 2',sans-serif; font-size:0.88rem; color:rgba(255,255,227,0.5); margin-bottom:36px; min-height:22px; letter-spacing:0.05em;"></div>
 
@@ -532,8 +631,8 @@ window.addEventListener('resize', () => {
 const viewInfo = document.getElementById('view-info');
 const views = {
   ensemble: { pos:[15, 10, 15], desc:"Vue d'ensemble de la base Selenetykos" },
-  haut:     { pos:[0.1, 20, 0.1], desc:"Survol zénithal de l'installation" },
-  face:     { pos:[0, 2, 16],    desc:"Vue frontale des modules d'habitation" },
+  haut:     { pos:[0.1, 25, 0.1], desc:"Survol zénithal de l'installation" },
+  face:     { pos:[0, 3, 18],    desc:"Vue frontale des modules d'habitation" },
   fusee:    { pos:[6, 4, -6],    desc:"Focus sur le module de transport lourd" }
 };
 
