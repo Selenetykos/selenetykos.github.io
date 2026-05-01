@@ -416,7 +416,24 @@
       left: 0;
       width: 100%;
       height: 100%;
-    }	
+    }
+	#game-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle, #050510 0%, #000 100%);
+      z-index: 10000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #00d4ff;
+      font-family: sans-serif;
+	}
+	#gameCanvas {
+      border: 3px solid #00d4ff;
+      background: #000;
+	}
 
   </style>
 </head>
@@ -739,5 +756,81 @@
     if (e.key === 'Enter') sendMessage();
   });
 </script>
+
+<div id="game-overlay">
+    <h2 style="margin-bottom: 10px;">Mission Selenetykos : Quittez la Terre</h2>
+    <div id="score-display" style="font-size: 20px; margin-bottom: 10px;">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <p style="margin-top: 15px;">Code secret activé ! Touches : ← → pour bouger</p>
+</div>
+
+<script>
+let inputSequence = "";
+const secretCode = " sely"; // Espace + S + E + L + Y
+
+window.addEventListener("keydown", (e) => {
+    inputSequence += e.key.toLowerCase();
+    if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
+    if (inputSequence === secretCode) {
+        document.getElementById('game-overlay').style.display = 'flex';
+        initGame();
+    }
+});
+
+let canvas, ctx, player, obstacles, score, gameActive;
+
+function initGame() {
+    canvas = document.getElementById("gameCanvas");
+    ctx = canvas.getContext("2d");
+    player = { x: 185, y: 520, w: 30, h: 50 };
+    obstacles = [];
+    score = 0;
+    gameActive = true;
+    window.addEventListener("keydown", (e) => {
+        if(e.key === "ArrowLeft" && player.x > 0) player.x -= 25;
+        if(e.key === "ArrowRight" && player.x < canvas.width - 30) player.x += 25;
+    });
+    animate();
+}
+
+function animate() {
+    if (!gameActive) return;
+    ctx.fillStyle = "black";
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+
+    // Fusée Selenetykos
+    ctx.fillStyle = "#00d4ff";
+    ctx.beginPath();
+    ctx.moveTo(player.x + 15, player.y);
+    ctx.lineTo(player.x, player.y + 50);
+    ctx.lineTo(player.x + 30, player.y + 50);
+    ctx.fill();
+
+    // Astéroïdes
+    if (Math.random() < 0.04) {
+        obstacles.push({ x: Math.random() * 370, y: -50, size: 25 + Math.random() * 25 });
+    }
+
+    obstacles.forEach((obs, index) => {
+        obs.y += 4 + (score / 100);
+        ctx.fillStyle = "#777";
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI*2);
+        ctx.fill();
+
+        if (player.x < obs.x + obs.size && player.x + 30 > obs.x && player.y < obs.y + obs.size && player.y + 50 > obs.y) {
+            gameActive = false;
+            alert("CRASH ! Score : " + Math.floor(score));
+            location.reload();
+        }
+        if (obs.y > 600) obstacles.splice(index, 1);
+    });
+
+    score += 0.5;
+    document.getElementById("score-display").innerText = "Score: " + Math.floor(score);
+    requestAnimationFrame(animate);
+}
+</script>
+	
 </body>
 </html>
