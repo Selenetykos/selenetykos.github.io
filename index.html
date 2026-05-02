@@ -1078,12 +1078,13 @@
     </div>
   </div>
 </div>
+
+	
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc } 
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// --- CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
   authDomain: "selenetykos-63361.firebaseapp.com",
@@ -1096,7 +1097,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- VARIABLES PRIVÉES (Inaccessibles en console) ---
 let canvas, ctx, player, obstacles, stars2, animId;
 let gameActive = false;
 let score = 0;
@@ -1104,7 +1104,6 @@ let startTime = 0;
 let inputSequence = "";
 const secretCode = "mdn";
 
-// --- SÉCURITÉ : Object.freeze pour empêcher la modification des fonctions ---
 const showScreen = (name) => {
   document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
   document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
@@ -1112,105 +1111,116 @@ const showScreen = (name) => {
   document.getElementById('game-hud').style.display = name === 'play' ? 'flex' : 'none';
 };
 
+// --- LEADERBOARD ---
 const loadLeaderboard = async () => {
   const el = document.getElementById('lb-list');
-  el.innerHTML = '<div class="lb-loading">Chargement…</div>';
+  el.innerHTML = '<div class="lb-loading">Chargement...</div>';
   try {
     const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(8));
     const snap = await getDocs(q);
     const entries = snap.docs.map(d => d.data());
-    
     el.innerHTML = entries.map((e, i) => {
       const medals = ['🥇','🥈','🥉'];
-      const medal = i < 3 ? `<span class="lb-rank">${medals[i]}</span>` : `<span class="lb-rank">${i+1}</span>`;
-      return `<div class="lb-row">${medal}<span class="lb-name">${e.name}</span><span class="lb-score">${e.score}</span></div>`;
+      const medal = i < 3 ? `<span>${medals[i]}</span>` : `<span>${i+1}</span>`;
+      return `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">
+                <div>${medal} ${e.name}</div><div style="color:#7eb8f7; font-weight:bold;">${e.score}</div>
+              </div>`;
     }).join('');
-  } catch(e) { el.innerHTML = 'Erreur de chargement.'; }
+  } catch(e) { el.innerHTML = 'Erreur.'; }
 };
 
+// --- DESSINS (TEXTURES ORIGINALES REPRISES ICI) ---
+function drawRocket(x, y) {
+  const cx = x + 15;
+  // Flamme
+  const flameH = 12 + Math.random() * 10;
+  const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
+  grad.addColorStop(0, "rgba(255,200,50,0.95)"); grad.addColorStop(0.5, "rgba(255,90,10,0.7)"); grad.addColorStop(1, "rgba(255,50,0,0)");
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.moveTo(x + 8, y + 50); ctx.lineTo(x + 22, y + 50); ctx.lineTo(cx, y + 50 + flameH); ctx.fill();
+  // Corps dégradé
+  const bodyGrad = ctx.createLinearGradient(x+7, 0, x+23, 0);
+  bodyGrad.addColorStop(0, "#c8ccd8"); bodyGrad.addColorStop(0.5, "#f0f2f7"); bodyGrad.addColorStop(1, "#9aa0b0");
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.roundRect(x + 7, y + 12, 16, 38, 2); ctx.fill();
+  // Ailerons
+  ctx.fillStyle = "#7eb8f7";
+  ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.fill();
+  // Pointe
+  const tipGrad = ctx.createLinearGradient(x+7, y+12, x+23, y+12);
+  tipGrad.addColorStop(0, "#a78bfa"); tipGrad.addColorStop(1, "#7eb8f7");
+  ctx.fillStyle = tipGrad;
+  ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x + 7, y + 12); ctx.lineTo(x + 23, y + 12); ctx.fill();
+  // Hublot
+  ctx.fillStyle = "#00d4ff"; ctx.beginPath(); ctx.arc(cx, y + 22, 4, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawObstacle(obs) {
+  ctx.save();
+  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  const r = obs.size / 2;
+  if (obs.type === 'planet') {
+    ctx.fillStyle = obs.color;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    if (obs.hasRing) {
+      ctx.strokeStyle = obs.color; ctx.globalAlpha = 0.45; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 1.7, r * 0.35, 0.3, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  } else {
+    ctx.fillStyle = obs.color;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.2)"; // Cratères
+    ctx.beginPath(); ctx.arc(-r*0.3, -r*0.2, r*0.2, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// --- LOGIQUE JEU ---
 const startGame = () => {
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
   showScreen('play');
-  
-  score = 0;
-  startTime = Date.now();
-  gameActive = true;
+  score = 0; startTime = Date.now(); gameActive = true;
   obstacles = [];
   player = { x: canvas.width/2 - 15, y: canvas.height - 90, w: 30, h: 50 };
-  
   stars2 = Array.from({length: 80}, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 1.3 + 0.2,
-    speed: Math.random() * 1.5 + 0.5,
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    r: Math.random() * 1.3 + 0.2, speed: Math.random() * 1.5 + 0.5,
   }));
-
   animate();
 };
 
 const gameOver = () => {
-  gameActive = false;
-  cancelAnimationFrame(animId);
+  gameActive = false; cancelAnimationFrame(animId);
   document.getElementById('game-final-score').textContent = Math.floor(score);
   showScreen('over');
 };
 
 const saveScore = async () => {
-  const nameInput = document.getElementById('pseudo-input');
-  const btn = document.getElementById('save-score-btn');
-  const name = nameInput.value.trim();
+  const name = document.getElementById('pseudo-input').value.trim();
   const finalScore = Math.floor(score);
-  
-  if (!name || btn.disabled) return;
-
-  // --- ANTI-CHEAT : Vérification du temps ---
   const duration = (Date.now() - startTime) / 1000;
-  if (finalScore > duration * 30) { // Un humain ne peut pas faire plus de 30 pts/sec
-    alert("Triche détectée : Progression impossible.");
-    return;
-  }
-
-  btn.disabled = true;
+  if (finalScore > duration * 35) return alert("Triche détectée.");
+  
   try {
     const q = query(collection(db, "scores"), where("name", "==", name));
-    const existing = await getDocs(q);
-    
+    const snap = await getDocs(q);
     let canSave = true;
-    existing.forEach(d => { if(d.data().score >= finalScore) canSave = false; });
-
+    snap.forEach(d => { if(d.data().score >= finalScore) canSave = false; });
     if (canSave) {
-      existing.forEach(async d => await deleteDoc(doc(db, "scores", d.id)));
+      snap.forEach(async d => await deleteDoc(doc(db, "scores", d.id)));
       await addDoc(collection(db, "scores"), { name, score: finalScore, date: Date.now() });
-      document.getElementById('save-feedback').textContent = "Record enregistré !";
-    } else {
-      document.getElementById('save-feedback').textContent = "Ton record est déjà meilleur.";
+      document.getElementById('save-feedback').textContent = "Record sauvegardé !";
     }
     loadLeaderboard();
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 };
-
-// --- LOGIQUE DE JEU (DA CONSERVÉE À 100%) ---
-function drawRocket(x, y) {
-  const cx = x + 15;
-  const flameH = 12 + Math.random() * 10;
-  const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
-  grad.addColorStop(0, "rgba(255,200,50,0.95)"); grad.addColorStop(1, "rgba(255,50,0,0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath(); ctx.moveTo(x + 8, y + 50); ctx.lineTo(x + 22, y + 50); ctx.lineTo(cx, y + 50 + flameH); ctx.fill();
-  ctx.fillStyle = "#f0f2f7"; ctx.beginPath(); ctx.roundRect(x + 7, y + 12, 16, 38, 2); ctx.fill();
-  ctx.fillStyle = "#7eb8f7"; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x + 7, y + 12); ctx.lineTo(x + 23, y + 12); ctx.fill();
-}
-
-function drawObstacle(obs) {
-  ctx.fillStyle = obs.color;
-  ctx.beginPath(); ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI*2); ctx.fill();
-}
 
 function animate() {
   if (!gameActive) return;
-  ctx.fillStyle = "#02020f";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#02020f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   stars2.forEach(s => {
     s.y += s.speed;
@@ -1220,34 +1230,37 @@ function animate() {
 
   drawRocket(player.x, player.y);
 
-  if (Math.random() < 0.03) {
-    const sz = 20 + Math.random()*20;
-    obstacles.push({ x: Math.random()*(canvas.width-sz), y: -sz, size: sz, color: "#444" });
+  if (Math.random() < 0.035) {
+    const isPlanet = Math.random() > 0.8;
+    const sz = isPlanet ? 35 + Math.random()*15 : 18 + Math.random()*12;
+    obstacles.push({
+      x: Math.random()*(canvas.width-sz), y: -sz, size: sz,
+      type: isPlanet ? 'planet' : 'asteroid',
+      color: isPlanet ? `hsl(${Math.random()*360},50%,50%)` : "#4b4b4b",
+      hasRing: isPlanet && Math.random() > 0.5
+    });
   }
 
-  const speed = 3 + score/200;
+  const speed = 3.2 + score/250;
   obstacles.forEach((obs, i) => {
     obs.y += speed;
     drawObstacle(obs);
-    
-    // Hitbox stricte
-    if (player.x < obs.x + obs.size - 5 && player.x + player.w > obs.x + 5 &&
-        player.y < obs.y + obs.size - 5 && player.y + player.h > obs.y + 5) {
-      gameOver();
-    }
+    const m = 4; // Margin collision
+    if (player.x+m < obs.x+obs.size-m && player.x+player.w-m > obs.x+m &&
+        player.y+m < obs.y+obs.size-m && player.y+player.h-m > obs.y+m) gameOver();
     if (obs.y > canvas.height) obstacles.splice(i, 1);
   });
 
   score += 0.2;
   document.getElementById('hud-score').textContent = Math.floor(score);
+  document.getElementById('hud-level').textContent = Math.floor(1 + score/200);
   animId = requestAnimationFrame(animate);
 }
 
-// --- ÉVÉNEMENTS ---
 window.addEventListener("keydown", (e) => {
   if (gameActive) {
-    if (e.key === "ArrowLeft") player.x = Math.max(0, player.x - 25);
-    if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + 25);
+    if (e.key === "ArrowLeft") player.x = Math.max(0, player.x - 28);
+    if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + 28);
   } else {
     inputSequence = (inputSequence + e.key.toLowerCase()).slice(-3);
     if (inputSequence === secretCode) {
@@ -1262,7 +1275,6 @@ document.getElementById('btn-replay').addEventListener('click', startGame);
 document.getElementById('save-score-btn').addEventListener('click', saveScore);
 document.getElementById('game-close-btn').addEventListener('click', () => location.reload());
 document.getElementById('btn-exit').addEventListener('click', () => location.reload());
-
 </script>
 	
 </body>
