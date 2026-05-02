@@ -930,8 +930,8 @@
     },
 
 	{
-      mots: ['jeu'],
-      rep: "Oh, tu veux piloter la fusée ? Très bien. Mais ne le dis à personne : fais Espace puis tape SELY sur ton clavier. À toi de jouer !"
+      mots: ['jeu', 'game', 'blague', 'jouer', 'play', 'easter egg', 'mdp', 'mot de passe', 'secret'],
+      rep: "Oh, tu veux piloter la fusée ? Très bien. Mais ne le dis à personne :   tape MDN sur ton clavier. À toi de jouer !"
     },
 	
   ];
@@ -1144,7 +1144,7 @@ window.saveScore = async function() {
 <script>
 // --- SYSTÈME DE TOUCHES SECRÈTES ---
 let inputSequence = "";
-const secretCode = " sely";
+const secretCode = "mdn";
 
 window.addEventListener("keydown", (e) => {
   if (gameActive) return; // ne pas interférer pendant le jeu
