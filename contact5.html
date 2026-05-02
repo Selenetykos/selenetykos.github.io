@@ -220,6 +220,56 @@
       letter-spacing: 0.05em;
     }
 
+    /* ── TOOLTIP MEMBRES ── */
+    .member {
+      position: relative;
+    }
+    .member::after {
+      content: '👆 Cliquez pour accéder à la biographie';
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      background: linear-gradient(135deg, rgba(30, 80, 160, 0.92), rgba(60, 40, 120, 0.88));
+      backdrop-filter: blur(10px);
+      color: #c8e4ff;
+      font-family: 'Exo 2', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      text-transform: none;
+      padding: 9px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(126, 184, 247, 0.35);
+      box-shadow: 0 4px 20px rgba(30, 80, 200, 0.35), 0 0 12px rgba(126,184,247,0.15);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 10;
+    }
+    .member::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      border: 6px solid transparent;
+      border-top-color: rgba(60, 40, 120, 0.88);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 10;
+    }
+    .member:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .member:hover::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     footer {
       margin-top: 80px; text-align: center;
       padding: 28px; border-top: 1px solid rgba(255,255,227,0.08);
