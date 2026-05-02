@@ -687,6 +687,227 @@
     text-align: center;
   }
 
+/* ════════════════════════════════
+   RESET & BASE
+════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #02020f; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+/* ════════════════════════════════
+   OVERLAY PRINCIPAL
+════════════════════════════════ */
+#game-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at center, #0a0a2e 0%, #02020f 70%);
+  z-index: 10000; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+/* ════════════════════════════════
+   BOUTON QUITTER
+════════════════════════════════ */
+#game-close-btn {
+  position: absolute; top: 20px; right: 20px;
+  background: rgba(126,184,247,0.12); border: 1px solid rgba(126,184,247,0.25);
+  color: rgba(255,255,255,0.7); cursor: pointer; font-size: 0.85rem;
+  padding: 6px 16px; border-radius: 20px; transition: all 0.2s;
+  font-family: inherit;
+}
+#game-close-btn:hover { background: rgba(126,184,247,0.28); color: white; }
+
+/* ════════════════════════════════
+   HUD EN JEU
+════════════════════════════════ */
+#game-hud {
+  display: none; width: 420px; justify-content: space-between; align-items: center;
+  margin-bottom: 8px; padding: 8px 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(126,184,247,0.15);
+  border-radius: 8px; color: white;
+}
+#hud-score-label {
+  font-size: 0.65rem; color: rgba(126,184,247,0.65);
+  letter-spacing: 2.5px; text-transform: uppercase;
+}
+#hud-score {
+  font-size: 1.6rem; font-weight: 700; color: #7eb8f7;
+  font-variant-numeric: tabular-nums;
+}
+#hud-hard-badge {
+  display: none; align-items: center; gap: 6px;
+  background: rgba(255,50,50,0.15); border: 1px solid rgba(255,80,80,0.4);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 2px;
+  color: #ff6060; text-transform: uppercase;
+  animation: hard-pulse 1.5s ease-in-out infinite;
+}
+@keyframes hard-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(255,60,60,0.3); }
+  50%       { opacity: 0.75; box-shadow: 0 0 18px rgba(255,60,60,0.6); }
+}
+#hard-flash {
+  position: absolute; inset: 0; background: rgba(255,0,0,0);
+  pointer-events: none; z-index: 999; border-radius: 12px;
+  transition: background 0.1s;
+}
+
+/* ════════════════════════════════
+   CONTRÔLES MOBILES
+════════════════════════════════ */
+#mobile-controls {
+  display: none;
+  width: 420px; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding: 0 8px; gap: 12px;
+}
+.arrow-btn {
+  flex: 1; height: 60px;
+  background: rgba(126,184,247,0.08);
+  border: 1px solid rgba(126,184,247,0.22);
+  border-radius: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s, transform 0.08s;
+  user-select: none; touch-action: manipulation;
+}
+.arrow-btn:active, .arrow-btn.pressed {
+  background: rgba(126,184,247,0.28);
+  transform: scale(0.95);
+  border-color: rgba(126,184,247,0.5);
+}
+.arrow-btn svg { width: 28px; height: 28px; opacity: 0.75; }
+
+/* ════════════════════════════════
+   ÉCRAN TITRE
+════════════════════════════════ */
+#game-title-screen {
+  display: flex; flex-direction: column; align-items: center;
+  color: white; text-align: center;
+}
+.title-rocket-wrap {
+  width: 80px; height: 80px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.title-rocket-wrap svg { filter: drop-shadow(0 0 16px rgba(126,184,247,0.5)); }
+
+.title-main {
+  font-size: 2rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+  background: linear-gradient(135deg, #a8d4ff 0%, #7eb8f7 45%, #c084fc 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 6px;
+}
+.title-sub {
+  font-size: 0.78rem; color: rgba(255,255,255,0.38);
+  letter-spacing: 2.5px; margin-bottom: 26px; text-transform: uppercase;
+}
+
+/* ════════════════════════════════
+   LEADERBOARD
+════════════════════════════════ */
+#game-leaderboard {
+  background: rgba(126,184,247,0.04);
+  border: 1px solid rgba(126,184,247,0.12);
+  padding: 16px 20px; border-radius: 12px;
+  margin: 0 0 26px; width: 300px;
+}
+.lb-title {
+  font-size: 0.68rem; color: rgba(126,184,247,0.6);
+  letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 12px;
+}
+.lb-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.85rem;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-pos { width: 28px; color: rgba(255,255,255,0.35); font-size: 0.72rem; }
+.lb-name { flex: 1; color: rgba(255,255,255,0.82); }
+.lb-score { color: #7eb8f7; font-weight: 600; font-size: 0.88rem; }
+.lb-gold   .lb-name, .lb-gold   .lb-score { color: #fbbf24; }
+.lb-silver .lb-name, .lb-silver .lb-score { color: #94a3b8; }
+.lb-bronze .lb-name, .lb-bronze .lb-score { color: #cd7c3a; }
+.lb-loading {
+  color: rgba(255,255,255,0.28); font-size: 0.82rem;
+  text-align: center; padding: 12px 0;
+}
+
+/* BOUTON LANCER */
+#btn-start-mission {
+  padding: 14px 38px;
+  background: linear-gradient(135deg, rgba(126,184,247,0.2), rgba(192,132,252,0.16));
+  border: 1px solid rgba(126,184,247,0.38); border-radius: 30px;
+  color: white; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+  letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.25s;
+  box-shadow: 0 0 28px rgba(126,184,247,0.12); font-family: inherit;
+}
+#btn-start-mission:hover {
+  background: linear-gradient(135deg, rgba(126,184,247,0.35), rgba(192,132,252,0.28));
+  box-shadow: 0 0 44px rgba(126,184,247,0.28); transform: translateY(-2px);
+}
+
+/* ════════════════════════════════
+   CANVAS
+════════════════════════════════ */
+#game-canvas-wrap {
+  display: none; border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(126,184,247,0.18);
+  box-shadow: 0 0 70px rgba(126,184,247,0.08);
+}
+
+/* ════════════════════════════════
+   ÉCRAN GAME OVER
+════════════════════════════════ */
+#game-over-screen {
+  display: none; flex-direction: column;
+  align-items: center; color: white; text-align: center;
+}
+.over-icon { font-size: 3.2rem; margin-bottom: 10px; }
+.over-title {
+  font-size: 0.82rem; font-weight: 400; color: rgba(255,255,255,0.45);
+  letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 6px;
+}
+#game-final-score {
+  font-size: 3.8rem; font-weight: 700; margin-bottom: 24px;
+  background: linear-gradient(135deg, #7eb8f7, #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  font-variant-numeric: tabular-nums;
+}
+#pseudo-row { display: flex; gap: 8px; margin-bottom: 8px; }
+#pseudo-input {
+  padding: 10px 16px; border-radius: 8px;
+  border: 1px solid rgba(126,184,247,0.28);
+  background: rgba(255,255,255,0.06); color: white; font-size: 0.88rem;
+  outline: none; transition: border-color 0.2s; font-family: inherit;
+}
+#pseudo-input::placeholder { color: rgba(255,255,255,0.28); }
+#pseudo-input:focus { border-color: rgba(126,184,247,0.55); }
+#save-score-btn {
+  padding: 10px 20px;
+  background: rgba(126,184,247,0.2); border: 1px solid rgba(126,184,247,0.38);
+  border-radius: 8px; color: white; cursor: pointer; font-weight: 600;
+  transition: all 0.2s; font-family: inherit;
+}
+#save-score-btn:hover { background: rgba(126,184,247,0.38); }
+#save-feedback {
+  font-size: 0.78rem; color: rgba(126,184,247,0.75);
+  margin-bottom: 22px; min-height: 18px;
+}
+.over-btns { display: flex; gap: 12px; }
+.game-btn {
+  padding: 12px 28px; border-radius: 8px; cursor: pointer;
+  font-weight: 600; font-size: 0.88rem; transition: all 0.2s;
+  font-family: inherit;
+}
+#btn-replay {
+  background: rgba(126,184,247,0.18);
+  border: 1px solid rgba(126,184,247,0.38); color: white;
+}
+#btn-replay:hover { background: rgba(126,184,247,0.32); }
+#btn-exit {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.55);
+}
+#btn-exit:hover { background: rgba(255,255,255,0.1); color: white; }
+	  
   </style>
 </head>
 <body>
@@ -1014,253 +1235,751 @@
   });
 </script>
 
-<div id="game-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2,2,15,0.98); z-index:10000; flex-direction:column; align-items:center; justify-content:center; font-family:'Segoe UI', Roboto, sans-serif; color:white;">
-    
-    <button id="game-close-btn" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; padding:10px 15px; border-radius:8px; cursor:pointer; z-index:10002;">✕ Quitter</button>
+<div id="game-overlay">
 
-    <div id="game-hud" style="display:none; width:420px; text-align:center; margin-bottom:10px; z-index:10001;">
-        <div style="font-size: 0.9rem; opacity: 0.6; letter-spacing: 2px;">MISSION STATUS</div>
-        <div style="font-size: 2rem; font-weight: 800; color:#7eb8f7;" id="hud-score">0</div>
-        <div id="hud-mode" style="font-size: 0.7rem; color:#f87171; font-weight:bold; visibility:hidden;">⚠️ MODE HARD ACTIF</div>
+  <button id="game-close-btn">✕ Quitter</button>
+
+  <!-- HUD -->
+  <div id="game-hud">
+    <div>
+      <div id="hud-score-label">Score</div>
+      <div id="hud-score">0</div>
+    </div>
+    <div id="hud-hard-badge">⚠ HARD MODE</div>
+  </div>
+
+  <!-- Flèches mobiles -->
+  <div id="mobile-controls">
+    <button class="arrow-btn" id="btn-left" aria-label="Gauche">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 18L9 12L15 6" stroke="rgba(126,184,247,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="arrow-btn" id="btn-right" aria-label="Droite">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 18L15 12L9 6" stroke="rgba(126,184,247,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ══ ÉCRAN TITRE ══ -->
+  <div id="game-title-screen">
+    <div class="title-rocket-wrap">
+      <!-- Mini fusée SVG décorative pour le titre -->
+      <svg width="48" height="72" viewBox="0 0 48 72" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="tg-body" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#8090b0"/>
+            <stop offset="0.35" stop-color="#d8dfe8"/>
+            <stop offset="0.65" stop-color="#eef2f8"/>
+            <stop offset="1" stop-color="#7080a0"/>
+          </linearGradient>
+          <linearGradient id="tg-tip" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#7060e0"/>
+            <stop offset="0.5" stop-color="#a78bfa"/>
+            <stop offset="1" stop-color="#5080e8"/>
+          </linearGradient>
+          <linearGradient id="tg-flame" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a0e0ff"/>
+            <stop offset="0.5" stop-color="#5090ff" stop-opacity="0.8"/>
+            <stop offset="1" stop-color="#3050ff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Flamme -->
+        <polygon points="17,56 31,56 24,72" fill="url(#tg-flame)"/>
+        <!-- Corps -->
+        <rect x="15" y="20" width="18" height="36" rx="3" fill="url(#tg-body)"/>
+        <!-- Reflet -->
+        <rect x="16" y="22" width="5" height="26" rx="2" fill="rgba(255,255,255,0.22)"/>
+        <!-- Ailerons -->
+        <polygon points="15,44 6,58 15,56" fill="#3a7bd5"/>
+        <polygon points="33,44 42,58 33,56" fill="#3a7bd5"/>
+        <!-- Pointe -->
+        <polygon points="24,0 15,20 33,20" fill="url(#tg-tip)"/>
+        <!-- Hublot -->
+        <circle cx="24" cy="30" r="5" fill="#00c8f0"/>
+        <circle cx="22.5" cy="28.5" r="2" fill="rgba(255,255,255,0.5)"/>
+      </svg>
     </div>
 
-    <div id="game-title-screen" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
-        <h1 style="font-size:2.5rem; margin-bottom:10px; background:linear-gradient(to bottom, #fff, #7eb8f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">SELENETYKOS</h1>
-        <div id="game-leaderboard" style="background:rgba(255,255,255,0.03); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); width:300px; margin-bottom:20px;">
-            <div style="font-weight:bold; margin-bottom:10px; color:#7eb8f7;">🏆 TOP PILOTES</div>
-            <div id="lb-list" style="font-size:0.9rem;">Chargement...</div>
-        </div>
-        <button class="game-btn" id="btn-start-mission" style="padding:15px 40px; background:#7eb8f7; color:#02020f; border:none; border-radius:50px; font-weight:bold; font-size:1.1rem; cursor:pointer; transition:0.3s; box-shadow:0 0 20px rgba(126,184,247,0.4);">LANCER LA MISSION</button>
+    <div class="title-main">Selenetykos</div>
+    <div class="title-sub">Pilotez · Évitez · Survivez</div>
+
+    <div id="game-leaderboard">
+      <div class="lb-title">🏆 Meilleurs pilotes</div>
+      <div id="lb-list"><div class="lb-loading">Chargement...</div></div>
     </div>
 
-    <div id="game-canvas-wrap" style="display:none; position:relative; box-shadow:0 0 50px rgba(0,0,0,0.5); border-radius:10px; overflow:hidden;">
-        <canvas id="gameCanvas" width="420" height="580"></canvas>
-    </div>
+    <button id="btn-start-mission">Lancer la mission</button>
+  </div>
 
-    <div id="mobile-controls" style="display:none;">
-        <div id="btn-left" style="position:fixed; left:0; top:0; width:50%; height:100%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
-        <div id="btn-right" style="position:fixed; right:0; top:0; width:50%; height:100%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
-    </div>
+  <!-- ══ CANVAS ══ -->
+  <div id="game-canvas-wrap" style="position:relative;">
+    <canvas id="gameCanvas" width="420" height="580"></canvas>
+    <div id="hard-flash"></div>
+  </div>
 
-    <div id="game-over-screen" style="display:none; flex-direction:column; align-items:center;">
-        <h2 style="color:#f87171;">VAISSEAU DÉTRUIT</h2>
-        <div id="game-final-score" style="font-size:3rem; font-weight:bold; margin:10px 0;">0</div>
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <input id="pseudo-input" type="text" maxlength="12" placeholder="Ton pseudo" style="padding:10px; border-radius:5px; border:none; background:rgba(255,255,255,0.1); color:white;"/>
-            <button id="save-score-btn" style="padding:10px 20px; background:#7eb8f7; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">ENREGISTRER</button>
-        </div>
-        <div id="save-feedback" style="font-size:0.8rem; margin-bottom:20px;"></div>
-        <button class="game-btn" id="btn-replay" style="padding:12px 30px; border:2px solid #7eb8f7; background:none; color:#7eb8f7; border-radius:50px; cursor:pointer; font-weight:bold;">TENTER À NOUVEAU</button>
+  <!-- ══ GAME OVER ══ -->
+  <div id="game-over-screen">
+    <div class="over-icon">💥</div>
+    <div class="over-title">Vaisseau perdu dans l'espace</div>
+    <div id="game-final-score">0</div>
+    <div id="pseudo-row">
+      <input id="pseudo-input" type="text" maxlength="16" placeholder="Ton pseudo…"/>
+      <button id="save-score-btn">OK</button>
     </div>
-</div>
-	
-	
+    <div id="save-feedback"></div>
+    <div class="over-btns">
+      <button class="game-btn" id="btn-replay">Rejouer</button>
+      <button class="game-btn" id="btn-exit">Quitter</button>
+    </div>
+  </div>
+
+</div><!-- #game-overlay -->
+
+<!-- ════════════════════════════════════════
+     FIREBASE + LOGIQUE JEU
+════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
-    authDomain: "selenetykos-63361.firebaseapp.com",
-    projectId: "selenetykos-63361",
-    storageBucket: "selenetykos-63361.firebasestorage.app",
-    messagingSenderId: "284139581187",
-    appId: "1:284139581187:web:86c38f70b37cebcfae8336"
+  apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
+  authDomain: "selenetykos-63361.firebaseapp.com",
+  projectId: "selenetykos-63361",
+  storageBucket: "selenetykos-63361.firebasestorage.app",
+  messagingSenderId: "284139581187",
+  appId: "1:284139581187:web:86c38f70b37cebcfae8336"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db  = getFirestore(app);
 
-let canvas, ctx, player, obstacles, stars, animId, score, gameActive, startTime;
+/* ── STATE ── */
+let canvas, ctx, player, obstacles, stars, nebulaCanvas, animId;
+let gameActive = false;
+let score = 0;
+let startTime = 0;
+let particles = [];
+let hardMode = false;
+let hardModeTriggered = false;
 let inputSequence = "";
 const secretCode = "mdn";
+const HARD_THRESHOLD = 1000;
 
+/* ── NAVIGATION ÉCRANS ── */
 const showScreen = (name) => {
-    document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
-    document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
-    document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
-    document.getElementById('game-hud').style.display = name === 'play' ? 'block' : 'none';
-    document.getElementById('mobile-controls').style.display = name === 'play' ? 'block' : 'none';
+  document.getElementById('game-title-screen').style.display  = name === 'title' ? 'flex'  : 'none';
+  document.getElementById('game-canvas-wrap').style.display   = name === 'play'  ? 'block' : 'none';
+  document.getElementById('game-over-screen').style.display   = name === 'over'  ? 'flex'  : 'none';
+  document.getElementById('game-hud').style.display           = name === 'play'  ? 'flex'  : 'none';
+  document.getElementById('mobile-controls').style.display    = name === 'play'  ? 'flex'  : 'none';
 };
 
-// --- RENDERER HAUTE QUALITÉ ---
-function drawRocket(x, y) {
-    ctx.save();
-    const cx = x + 15;
-    // Flamme dynamique
-    const flameH = 15 + Math.random() * 15;
-    const g = ctx.createLinearGradient(cx, y+45, cx, y+45+flameH);
-    g.addColorStop(0, '#fff'); g.addColorStop(0.2, '#7eb8f7'); g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(x+10, y+45); ctx.lineTo(x+20, y+45); ctx.lineTo(cx, y+45+flameH); ctx.fill();
+/* ════════════════════════════════
+   LEADERBOARD
+════════════════════════════════ */
+const loadLeaderboard = async () => {
+  const el = document.getElementById('lb-list');
+  el.innerHTML = '<div class="lb-loading">Chargement...</div>';
+  try {
+    const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(8));
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => d.data());
+    const medals = ['🥇','🥈','🥉'];
+    const cls    = ['lb-gold','lb-silver','lb-bronze'];
+    el.innerHTML = entries.map((e, i) => `
+      <div class="lb-row ${cls[i] || ''}">
+        <div class="lb-pos">${i < 3 ? medals[i] : i+1}</div>
+        <div class="lb-name">${e.name}</div>
+        <div class="lb-score">${e.score}</div>
+      </div>`).join('') || '<div class="lb-loading">Aucun score enregistré</div>';
+  } catch(err) {
+    el.innerHTML = '<div class="lb-loading">Erreur de chargement</div>';
+  }
+};
 
-    // Corps de la fusée
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.roundRect(x+7, y+10, 16, 35, 5); ctx.fill();
-    // Pointe
-    ctx.fillStyle = '#7eb8f7';
-    ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x+7, y+15); ctx.lineTo(x+23, y+15); ctx.fill();
-    // Hublot brillant
-    ctx.fillStyle = '#02020f';
-    ctx.beginPath(); ctx.arc(cx, y+22, 4, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
+/* ════════════════════════════════
+   NÉBULEUSE (canvas offscreen)
+════════════════════════════════ */
+function buildNebula(w, h) {
+  const nc = document.createElement('canvas');
+  nc.width = w; nc.height = h;
+  const nx = nc.getContext('2d');
+  const clouds = [
+    { r:80, g:40,  b:180 },
+    { r:20, g:60,  b:210 },
+    { r:150,g:20,  b:130 },
+    { r:10, g:110, b:170 },
+    { r:60, g:30,  b:160 },
+    { r:100,g:50,  b:200 },
+  ];
+  for (let i = 0; i < 7; i++) {
+    const c = clouds[i % clouds.length];
+    const x = Math.random() * w, y = Math.random() * h;
+    const rad = 70 + Math.random() * 130;
+    const gr = nx.createRadialGradient(x, y, 0, x, y, rad);
+    gr.addColorStop(0, `rgba(${c.r},${c.g},${c.b},0.14)`);
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    nx.fillStyle = gr;
+    nx.beginPath(); nx.arc(x, y, rad, 0, Math.PI*2); nx.fill();
+  }
+  return nc;
+}
+
+/* ════════════════════════════════
+   ÉTOILES
+════════════════════════════════ */
+function makeStars(w, h, count) {
+  return Array.from({ length: count }, () => ({
+    x:       Math.random() * w,
+    y:       Math.random() * h,
+    r:       Math.random() * 1.5 + 0.2,
+    speed:   Math.random() * 1.3 + 0.4,
+    bright:  Math.random(),
+    phase:   Math.random() * Math.PI * 2,
+    color:   Math.random() > 0.82
+               ? `hsl(${200 + Math.random()*60},60%,85%)`
+               : 'white',
+  }));
+}
+
+function drawStars() {
+  const t = Date.now() * 0.001;
+  stars.forEach(s => {
+    s.y += s.speed;
+    if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+    const alpha = 0.4 + 0.6 * s.bright * (0.7 + 0.3 * Math.sin(t * 1.5 + s.phase));
+    if (s.r > 0.9) {
+      /* Halo doux pour les grandes étoiles */
+      const sg = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3.5);
+      sg.addColorStop(0, s.color);
+      sg.addColorStop(0.3, `rgba(180,210,255,${alpha * 0.35})`);
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sg; ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = s.color; ctx.globalAlpha = alpha;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+}
+
+/* ════════════════════════════════
+   PARTICULES (traînée propulseur)
+════════════════════════════════ */
+function spawnParticle(px, py) {
+  particles.push({
+    x:    px + 15 + (Math.random() - 0.5) * 7,
+    y:    py + 55,
+    vx:   (Math.random() - 0.5) * 0.9,
+    vy:   Math.random() * 1.6 + 0.5,
+    life: 1,
+    size: Math.random() * 2.8 + 0.5,
+    hue:  180 + Math.random() * 60,
+  });
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.life -= 0.045;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    const pg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.2);
+    pg.addColorStop(0, `hsla(${p.hue},90%,82%,${p.life * 0.8})`);
+    pg.addColorStop(1, `hsla(${p.hue},80%,60%,0)`);
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ════════════════════════════════
+   DESSIN FUSÉE
+════════════════════════════════ */
+function drawRocket(x, y) {
+  const cx = x + 15;
+  const t  = Date.now();
+  ctx.save();
+
+  /* Lueur moteur */
+  const engineGlow = ctx.createRadialGradient(cx, y+54, 0, cx, y+54, 24);
+  engineGlow.addColorStop(0, 'rgba(100,180,255,0.45)');
+  engineGlow.addColorStop(0.4, 'rgba(80,140,255,0.18)');
+  engineGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = engineGlow;
+  ctx.beginPath(); ctx.arc(cx, y+54, 24, 0, Math.PI*2); ctx.fill();
+
+  /* Flamme froide (bleue) */
+  const fH = 16 + Math.sin(t * 0.022) * 4 + Math.random() * 6;
+  const fg  = ctx.createLinearGradient(cx, y+50, cx, y+50+fH);
+  fg.addColorStop(0, 'rgba(180,225,255,0.95)');
+  fg.addColorStop(0.2, 'rgba(100,180,255,0.88)');
+  fg.addColorStop(0.6, 'rgba(70,120,255,0.55)');
+  fg.addColorStop(1, 'rgba(50,70,255,0)');
+  ctx.fillStyle = fg;
+  ctx.beginPath(); ctx.moveTo(x+8, y+50); ctx.lineTo(x+22, y+50); ctx.lineTo(cx, y+50+fH); ctx.fill();
+
+  /* Halo chaud (orange/jaune) */
+  const fH2 = 10 + Math.random() * 8;
+  const fg2  = ctx.createLinearGradient(cx, y+50, cx, y+50+fH2);
+  fg2.addColorStop(0, 'rgba(255,225,110,0.72)');
+  fg2.addColorStop(0.4, 'rgba(255,145,30,0.42)');
+  fg2.addColorStop(1, 'rgba(255,60,0,0)');
+  ctx.fillStyle = fg2;
+  ctx.beginPath(); ctx.moveTo(x+10, y+50); ctx.lineTo(x+20, y+50); ctx.lineTo(cx, y+50+fH2); ctx.fill();
+
+  /* Aileron gauche */
+  ctx.fillStyle = '#2a6bc0';
+  ctx.beginPath(); ctx.moveTo(x+7,y+38); ctx.lineTo(x,y+52); ctx.lineTo(x+3,y+52); ctx.lineTo(x+7,y+48); ctx.closePath(); ctx.fill();
+  const fgL = ctx.createLinearGradient(x, y+38, x+7, y+38);
+  fgL.addColorStop(0, 'rgba(126,184,247,0.55)'); fgL.addColorStop(1, 'transparent');
+  ctx.fillStyle = fgL;
+  ctx.beginPath(); ctx.moveTo(x+7,y+38); ctx.lineTo(x,y+52); ctx.lineTo(x+7,y+48); ctx.closePath(); ctx.fill();
+
+  /* Aileron droit */
+  ctx.fillStyle = '#2a6bc0';
+  ctx.beginPath(); ctx.moveTo(x+23,y+38); ctx.lineTo(x+30,y+52); ctx.lineTo(x+27,y+52); ctx.lineTo(x+23,y+48); ctx.closePath(); ctx.fill();
+  const fgR = ctx.createLinearGradient(x+30, y+38, x+23, y+38);
+  fgR.addColorStop(0, 'rgba(126,184,247,0.55)'); fgR.addColorStop(1, 'transparent');
+  ctx.fillStyle = fgR;
+  ctx.beginPath(); ctx.moveTo(x+23,y+38); ctx.lineTo(x+30,y+52); ctx.lineTo(x+23,y+48); ctx.closePath(); ctx.fill();
+
+  /* Corps principal */
+  const bodyGrad = ctx.createLinearGradient(x+7, 0, x+23, 0);
+  bodyGrad.addColorStop(0, '#7080a8');
+  bodyGrad.addColorStop(0.28, '#ccd6e8');
+  bodyGrad.addColorStop(0.55, '#edf2fa');
+  bodyGrad.addColorStop(1, '#6878a0');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.roundRect(x+7, y+12, 16, 38, 3); ctx.fill();
+
+  /* Reflet latéral gauche */
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.beginPath(); ctx.roundRect(x+8, y+14, 5, 28, 2); ctx.fill();
+
+  /* Ligne de détail (séparation section) */
+  ctx.strokeStyle = 'rgba(126,184,247,0.18)'; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(x+7, y+34); ctx.lineTo(x+23, y+34); ctx.stroke();
+
+  /* Pointe */
+  const tipGrad = ctx.createLinearGradient(x+7, y+12, x+23, y+12);
+  tipGrad.addColorStop(0, '#6050d8');
+  tipGrad.addColorStop(0.5, '#a78bfa');
+  tipGrad.addColorStop(1, '#4870e0');
+  ctx.fillStyle = tipGrad;
+  ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x+7, y+12); ctx.lineTo(x+23, y+12); ctx.closePath(); ctx.fill();
+  /* Reflet pointe */
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.beginPath(); ctx.moveTo(cx, y+2); ctx.lineTo(cx-3, y+12); ctx.lineTo(cx, y+10); ctx.closePath(); ctx.fill();
+
+  /* Hublot */
+  const portGrad = ctx.createRadialGradient(cx-1.2, y+21, 0, cx, y+22, 5.5);
+  portGrad.addColorStop(0, '#88f4ff');
+  portGrad.addColorStop(0.5, '#00b8e8');
+  portGrad.addColorStop(1, '#0055a0');
+  ctx.fillStyle = portGrad;
+  ctx.beginPath(); ctx.arc(cx, y+22, 5.5, 0, Math.PI*2); ctx.fill();
+  /* Reflet hublot */
+  ctx.fillStyle = 'rgba(255,255,255,0.52)';
+  ctx.beginPath(); ctx.arc(cx-1.8, y+20, 2, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+/* ════════════════════════════════
+   OBSTACLES
+════════════════════════════════ */
+
+/* Forme irrégulière pour les astéroïdes */
+function makeAsteroidShape(sides) {
+  return Array.from({ length: sides }, (_, i) => {
+    const angle  = (i / sides) * Math.PI * 2 - Math.PI / 2;
+    const jitter = 0.62 + Math.random() * 0.48;
+    return { x: Math.cos(angle) * jitter, y: Math.sin(angle) * jitter };
+  });
+}
+
+function spawnObstacle(w) {
+  const isPlanet = Math.random() > 0.78;
+  const sz = isPlanet ? 36 + Math.random() * 20 : 18 + Math.random() * 14;
+
+  if (isPlanet) {
+    const hue = Math.floor(Math.random() * 360);
+    const sat = 38 + Math.floor(Math.random() * 28);
+    return {
+      x: Math.random() * (w - sz), y: -sz, size: sz, type: 'planet',
+      color:     `hsl(${hue},${sat}%,44%)`,
+      lightColor:`hsl(${hue},${sat+12}%,66%)`,
+      darkColor: `hsl(${hue},${sat-10}%,24%)`,
+      glowColor: `hsla(${hue},${sat+15}%,58%,0.18)`,
+      ringColor: `hsla(${(hue+35) % 360},${sat}%,58%,0.4)`,
+      hasRing:   Math.random() > 0.5,
+      /* Mouvement horizontal mode HARD */
+      vx: 0, sineAmp: 0, sineFreq: 0, sineOffset: Math.random() * Math.PI * 2,
+    };
+  } else {
+    const base  = 44 + Math.floor(Math.random() * 22);
+    const sides = 6 + Math.floor(Math.random() * 5);
+    return {
+      x: Math.random() * (w - sz), y: -sz, size: sz, type: 'asteroid',
+      color:     `rgb(${base},${base-4},${base-9})`,
+      lightColor:`rgb(${base+32},${base+27},${base+22})`,
+      darkColor: `rgb(${base-16},${base-20},${base-24})`,
+      shape:   makeAsteroidShape(sides),
+      craters: Array.from({ length: 2 + Math.floor(Math.random() * 3) }, () => ({
+        x: (Math.random() - 0.5) * 1.2,
+        y: (Math.random() - 0.5) * 1.2,
+        r: 0.08 + Math.random() * 0.18,
+      })),
+    };
+  }
 }
 
 function drawObstacle(obs) {
+  ctx.save();
+  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  const r = obs.size / 2;
+
+  if (obs.type === 'planet') {
+
+    /* Halo externe */
+    const halo = ctx.createRadialGradient(0,0, r*0.75, 0,0, r*1.65);
+    halo.addColorStop(0, obs.glowColor);
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, r*1.65, 0, Math.PI*2); ctx.fill();
+
+    /* Corps 3D */
+    const pg = ctx.createRadialGradient(-r*0.32,-r*0.38, r*0.08, 0,0, r);
+    pg.addColorStop(0, obs.lightColor);
+    pg.addColorStop(0.55, obs.color);
+    pg.addColorStop(1, obs.darkColor);
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+
+    /* Bandes atmosphériques */
     ctx.save();
-    ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
-    
-    if (obs.type === 'planet') {
-        // Planète avec ombre portée
-        const grad = ctx.createRadialGradient(-obs.size/4, -obs.size/4, 0, 0, 0, obs.size/2);
-        grad.addColorStop(0, obs.color);
-        grad.addColorStop(1, '#000');
-        ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(0, 0, obs.size/2, 0, Math.PI*2); ctx.fill();
-        
-        if (obs.hasRing) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.ellipse(0, 0, obs.size, obs.size/3, 0.5, 0, Math.PI*2); ctx.stroke();
-        }
-    } else {
-        // Astéroïde texturé
-        ctx.fillStyle = '#444';
-        ctx.beginPath(); ctx.arc(0, 0, obs.size/2, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.beginPath(); ctx.arc(obs.size/5, obs.size/5, obs.size/5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.clip();
+    ctx.globalAlpha = 0.1;
+    for (let i = -3; i <= 3; i++) {
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)';
+      ctx.fillRect(-r, i * r/3 - r*0.09, r*2, r*0.2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    /* Anneau */
+    if (obs.hasRing) {
+      ctx.save(); ctx.rotate(0.3);
+      const rg = ctx.createLinearGradient(-r*1.82, 0, r*1.82, 0);
+      rg.addColorStop(0, 'rgba(0,0,0,0)');
+      rg.addColorStop(0.18, obs.ringColor);
+      rg.addColorStop(0.5, obs.lightColor);
+      rg.addColorStop(0.82, obs.ringColor);
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.strokeStyle = rg; ctx.lineWidth = 4.5; ctx.globalAlpha = 0.52;
+      ctx.beginPath(); ctx.ellipse(0, 0, r*1.78, r*0.4, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.lineWidth = 2; ctx.globalAlpha = 0.28;
+      ctx.beginPath(); ctx.ellipse(0, 0, r*1.52, r*0.3, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+
+    /* Reflet spéculaire */
+    const sp = ctx.createRadialGradient(-r*0.38,-r*0.38, 0, -r*0.18,-r*0.18, r*0.6);
+    sp.addColorStop(0, 'rgba(255,255,255,0.33)');
+    sp.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sp;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+
+  } else {
+
+    /* Halo poussiéreux */
+    const dh = ctx.createRadialGradient(0,0, r*0.82, 0,0, r*1.45);
+    dh.addColorStop(0, 'rgba(130,105,85,0.14)');
+    dh.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = dh;
+    ctx.beginPath(); ctx.arc(0, 0, r*1.45, 0, Math.PI*2); ctx.fill();
+
+    /* Corps irrégulier */
+    const pts = obs.shape;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x * r, pts[0].y * r);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * r, pts[i].y * r);
+    ctx.closePath();
+    const ag = ctx.createRadialGradient(-r*0.28,-r*0.28, r*0.08, 0,0, r);
+    ag.addColorStop(0, obs.lightColor);
+    ag.addColorStop(0.65, obs.color);
+    ag.addColorStop(1, obs.darkColor);
+    ctx.fillStyle = ag; ctx.fill();
+
+    /* Cratères */
+    ctx.save(); ctx.clip();
+    for (const cr of obs.craters) {
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.arc(cr.x*r, cr.y*r, cr.r*r, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath(); ctx.arc(cr.x*r - cr.r*r*0.35, cr.y*r - cr.r*r*0.35, cr.r*r*0.5, 0, Math.PI*2); ctx.fill();
     }
     ctx.restore();
+
+    /* Reflet spéculaire astéroïde */
+    const aspec = ctx.createRadialGradient(-r*0.32,-r*0.32, 0, 0,0, r*0.75);
+    aspec.addColorStop(0, 'rgba(255,255,255,0.17)');
+    aspec.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = aspec;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.restore();
 }
 
-// --- LOGIQUE DU JEU ---
-function animate() {
-    if (!gameActive) return;
-    ctx.fillStyle = "#02020f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Etoiles
-    stars.forEach(s => {
-        s.y += s.speed;
-        if (s.y > canvas.height) s.y = 0;
-        ctx.fillStyle = `rgba(255,255,255,${s.opacity})`;
-        ctx.fillRect(s.x, s.y, s.size, s.size);
-    });
-
-    const isHard = score >= 1000;
-    document.getElementById('hud-mode').style.visibility = isHard ? 'visible' : 'hidden';
-
-    // Difficulté progressive
-    const spawnRate = isHard ? 0.06 : 0.035;
-    if (Math.random() < spawnRate) {
-        const isPlanet = Math.random() > 0.7;
-        const sz = isPlanet ? 40 + Math.random()*20 : 20 + Math.random()*15;
-        obstacles.push({
-            x: Math.random()*(canvas.width-sz), y: -sz, size: sz,
-            type: isPlanet ? 'planet' : 'asteroid',
-            color: `hsl(${Math.random()*360}, 60%, 60%)`,
-            hasRing: Math.random() > 0.6
-        });
-    }
-
-    const speed = isHard ? (6 + (score-1000)/150) : (3.5 + score/250);
-
-    obstacles.forEach((obs, i) => {
-        obs.y += speed;
-        drawObstacle(obs);
-        
-        // Collision (Hitbox optimisée)
-        const hit = 6;
-        if (player.x+hit < obs.x+obs.size-hit && player.x+player.w-hit > obs.x+hit &&
-            player.y+hit < obs.y+obs.size-hit && player.y+player.h-hit > obs.y+hit) {
-            gameOver();
-        }
-        if (obs.y > canvas.height) obstacles.splice(i, 1);
-    });
-
-    drawRocket(player.x, player.y);
-    score += 0.25;
-    document.getElementById('hud-score').textContent = Math.floor(score);
-    animId = requestAnimationFrame(animate);
+/* ════════════════════════════════
+   FOND
+════════════════════════════════ */
+function drawBackground() {
+  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, '#02020f');
+  bg.addColorStop(0.45, '#040818');
+  bg.addColorStop(1, '#02020f');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  /* Nébuleuse */
+  ctx.globalAlpha = 0.52;
+  ctx.drawImage(nebulaCanvas, 0, 0);
+  ctx.globalAlpha = 1;
+  /* Vignette rouge en mode HARD */
+  if (hardMode) {
+    const pulse = 0.06 + 0.04 * Math.sin(Date.now() * 0.004);
+    const vg = ctx.createRadialGradient(
+      canvas.width/2, canvas.height/2, canvas.height * 0.25,
+      canvas.width/2, canvas.height/2, canvas.height * 0.82
+    );
+    vg.addColorStop(0, 'rgba(180,0,0,0)');
+    vg.addColorStop(1, `rgba(180,0,0,${pulse})`);
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
-// --- CLASSEMENT FIREBASE ---
-const loadLeaderboard = async () => {
-    const el = document.getElementById('lb-list');
-    try {
-        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
-        const snap = await getDocs(q);
-        el.innerHTML = snap.docs.map((d, i) => `
-            <div style="display:flex; justify-content:space-between; margin:5px 0; opacity:${1 - i*0.15}">
-                <span>${i+1}. ${d.data().name}</span>
-                <span style="color:#7eb8f7; font-weight:bold;">${d.data().score}</span>
-            </div>
-        `).join('') || "Aucun score";
-    } catch(e) { el.innerHTML = "Erreur chargement"; }
-};
-
-const saveScore = async () => {
-    const name = document.getElementById('pseudo-input').value.trim();
-    const btn = document.getElementById('save-score-btn');
-    if (!name || btn.disabled) return;
-    btn.disabled = true;
-    try {
-        await addDoc(collection(db, "scores"), { name, score: Math.floor(score), date: Date.now() });
-        document.getElementById('save-feedback').textContent = "Score enregistré !";
-        loadLeaderboard();
-    } catch(e) { btn.disabled = false; }
-};
-
-// --- INITIALISATION ---
+/* ════════════════════════════════
+   LOGIQUE JEU (inchangée)
+════════════════════════════════ */
 const startGame = () => {
-    canvas = document.getElementById("gameCanvas");
-    ctx = canvas.getContext("2d");
-    showScreen('play');
-    score = 0; gameActive = true; obstacles = [];
-    player = { x: canvas.width/2-15, y: canvas.height-100, w: 30, h: 50 };
-    stars = Array.from({length: 100}, () => ({
-        x: Math.random()*canvas.width, y: Math.random()*canvas.height,
-        size: Math.random()*2, speed: Math.random()*3 + 1, opacity: Math.random()
-    }));
-    animate();
+  canvas    = document.getElementById("gameCanvas");
+  ctx       = canvas.getContext("2d");
+  showScreen('play');
+  score = 0; startTime = Date.now(); gameActive = true;
+  obstacles = []; particles = [];
+  hardMode = false; hardModeTriggered = false;
+  document.getElementById('hud-hard-badge').style.display = 'none';
+  player = { x: canvas.width/2 - 15, y: canvas.height - 90, w: 30, h: 50 };
+  stars         = makeStars(canvas.width, canvas.height, 130);
+  nebulaCanvas  = buildNebula(canvas.width, canvas.height);
+  animate();
 };
 
 const gameOver = () => {
-    gameActive = false; cancelAnimationFrame(animId);
-    document.getElementById('game-final-score').textContent = Math.floor(score);
-    showScreen('over');
+  gameActive = false; cancelAnimationFrame(animId);
+  document.getElementById('game-final-score').textContent = Math.floor(score);
+  showScreen('over');
 };
 
-const closeGame = () => {
-    gameActive = false;
-    cancelAnimationFrame(animId);
-    document.getElementById('game-overlay').style.display = 'none';
+const saveScore = async () => {
+  const name       = document.getElementById('pseudo-input').value.trim();
+  if (!name) return;
+  const finalScore = Math.floor(score);
+  const duration   = (Date.now() - startTime) / 1000;
+  if (finalScore > duration * 35) return alert("Triche détectée.");
+  try {
+    const q    = query(collection(db, "scores"), where("name","==",name));
+    const snap = await getDocs(q);
+    let canSave = true;
+    snap.forEach(d => { if (d.data().score >= finalScore) canSave = false; });
+    if (canSave) {
+      snap.forEach(async d => await deleteDoc(doc(db, "scores", d.id)));
+      await addDoc(collection(db, "scores"), { name, score: finalScore, date: Date.now() });
+      document.getElementById('save-feedback').textContent = "Score sauvegardé !";
+    } else {
+      document.getElementById('save-feedback').textContent = "Score inférieur à ton record.";
+    }
+    loadLeaderboard();
+  } catch(e) {
+    document.getElementById('save-feedback').textContent = "Erreur réseau.";
+  }
 };
 
-// --- EVENTS ---
+/* ════════════════════════════════
+   BOUCLE PRINCIPALE
+════════════════════════════════ */
+function animate() {
+  if (!gameActive) return;
+
+  drawBackground();
+  drawStars();
+
+  /* Particules propulseur */
+  if (Math.random() < 0.65) spawnParticle(player.x, player.y);
+  updateParticles();
+
+  drawRocket(player.x, player.y);
+
+  /* ── HARD MODE activation à 1000 ── */
+  if (!hardModeTriggered && score >= HARD_THRESHOLD) {
+    hardMode = true;
+    hardModeTriggered = true;
+    document.getElementById('hud-hard-badge').style.display = 'flex';
+    /* Flash rouge */
+    const flash = document.getElementById('hard-flash');
+    flash.style.background = 'rgba(255,0,0,0.35)';
+    setTimeout(() => { flash.style.background = 'rgba(255,0,0,0)'; }, 300);
+    /* Planètes existantes reçoivent leur mouvement */
+    for (const obs of obstacles) {
+      if (obs.type === 'planet') {
+        obs.vx = (Math.random() - 0.5) * 3.5;
+        obs.sineAmp  = 20 + Math.random() * 35;
+        obs.sineFreq = 0.025 + Math.random() * 0.03;
+      }
+    }
+  }
+
+  /* Spawn obstacles */
+  if (Math.random() < 0.035) {
+    const obs = spawnObstacle(canvas.width);
+    /* En mode HARD, les nouvelles planètes bougent dès le spawn */
+    if (hardMode && obs.type === 'planet') {
+      obs.vx = (Math.random() - 0.5) * 4;
+      obs.sineAmp  = 25 + Math.random() * 40;
+      obs.sineFreq = 0.025 + Math.random() * 0.03;
+    }
+    obstacles.push(obs);
+  }
+
+  const speed = 3.2 + score / 250;
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const obs = obstacles[i];
+    obs.y += speed;
+
+    /* Mouvement horizontal planètes en mode HARD */
+    if (hardMode && obs.type === 'planet') {
+      /* Combinaison : dérive linéaire + ondulation sinusoïdale */
+      obs.x += obs.vx;
+      obs.x += Math.sin(obs.y * obs.sineFreq + obs.sineOffset) * 1.8;
+      /* Rebond sur les bords */
+      if (obs.x < -obs.size * 0.5)            { obs.x = -obs.size * 0.5;            obs.vx = Math.abs(obs.vx); }
+      if (obs.x > canvas.width - obs.size * 0.5) { obs.x = canvas.width - obs.size * 0.5; obs.vx = -Math.abs(obs.vx); }
+      /* Traînée de la planète en mode HARD */
+      if (Math.random() < 0.3) {
+        particles.push({
+          x: obs.x + obs.size/2 + (Math.random()-0.5)*obs.size*0.6,
+          y: obs.y + obs.size/2 + (Math.random()-0.5)*obs.size*0.6,
+          vx: (Math.random()-0.5)*0.6, vy: -(Math.random()*0.8+0.2),
+          life: 1, size: Math.random()*3+1,
+          hue: 0 + Math.random()*40,
+        });
+      }
+    }
+
+    drawObstacle(obs);
+    /* Collision (marges identiques à l'original) */
+    const m = 4;
+    if (player.x+m < obs.x+obs.size-m && player.x+player.w-m > obs.x+m &&
+        player.y+m < obs.y+obs.size-m && player.y+player.h-m > obs.y+m) {
+      gameOver(); return;
+    }
+    if (obs.y > canvas.height) obstacles.splice(i, 1);
+  }
+
+  score += 0.2;
+  document.getElementById('hud-score').textContent = Math.floor(score);
+  animId = requestAnimationFrame(animate);
+}
+
+/* ════════════════════════════════
+   CONTRÔLES CLAVIER
+════════════════════════════════ */
+window.addEventListener("keydown", (e) => {
+  if (gameActive) {
+    if (e.key === "ArrowLeft")  player.x = Math.max(0, player.x - 28);
+    if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + 28);
+  } else {
+    inputSequence = (inputSequence + e.key.toLowerCase()).slice(-3);
+    if (inputSequence === secretCode) {
+      document.getElementById('game-overlay').style.display = 'flex';
+      loadLeaderboard();
+    }
+  }
+});
+
+/* ════════════════════════════════
+   BOUTONS
+════════════════════════════════ */
 document.getElementById('btn-start-mission').addEventListener('click', startGame);
 document.getElementById('btn-replay').addEventListener('click', startGame);
 document.getElementById('save-score-btn').addEventListener('click', saveScore);
-document.getElementById('game-close-btn').addEventListener('click', closeGame);
 
-window.addEventListener("keydown", (e) => {
-    if (gameActive) {
-        if (e.key === "ArrowLeft") player.x = Math.max(0, player.x - 30);
-        if (e.key === "ArrowRight") player.x = Math.min(canvas.width-player.w, player.x + 30);
-    } else {
-        inputSequence = (inputSequence + e.key.toLowerCase()).slice(-3);
-        if (inputSequence === secretCode) {
-            document.getElementById('game-overlay').style.display = 'flex';
-            loadLeaderboard();
-        }
-    }
+document.getElementById('game-close-btn').addEventListener('click', () => {
+  gameActive = false; cancelAnimationFrame(animId);
+  showScreen('title'); loadLeaderboard();
+});
+document.getElementById('btn-exit').addEventListener('click', () => {
+  gameActive = false; cancelAnimationFrame(animId);
+  showScreen('title'); loadLeaderboard();
 });
 
-// Mobile
-const move = (dir) => { if(gameActive) player.x = dir === 'L' ? Math.max(0, player.x-35) : Math.min(canvas.width-player.w, player.x+35); };
-document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); move('L'); });
-document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); move('R'); });
+/* ════════════════════════════════
+   CONTRÔLES TACTILES (appui continu)
+════════════════════════════════ */
+let holdLeft = false, holdRight = false;
+let holdInterval = null;
 
+function startHold(dir) {
+  stopHold();
+  // Mouvement immédiat
+  movePlayer(dir);
+  // Puis continu toutes les 80ms
+  holdInterval = setInterval(() => movePlayer(dir), 80);
+}
+
+function stopHold() {
+  clearInterval(holdInterval);
+  holdInterval = null;
+  holdLeft = false; holdRight = false;
+}
+
+function movePlayer(dir) {
+  if (!gameActive || !canvas) return;
+  if (dir === 'left')  player.x = Math.max(0, player.x - 35);
+  if (dir === 'right') player.x = Math.min(canvas.width - player.w, player.x + 35);
+}
+
+const btnL = document.getElementById('btn-left');
+const btnR = document.getElementById('btn-right');
+
+btnL.addEventListener('touchstart', (e) => {
+  e.preventDefault(); btnL.classList.add('pressed'); startHold('left');
+}, { passive: false });
+btnL.addEventListener('touchend',   (e) => { e.preventDefault(); btnL.classList.remove('pressed'); stopHold(); }, { passive: false });
+btnL.addEventListener('touchcancel',(e) => { e.preventDefault(); btnL.classList.remove('pressed'); stopHold(); }, { passive: false });
+
+btnR.addEventListener('touchstart', (e) => {
+  e.preventDefault(); btnR.classList.add('pressed'); startHold('right');
+}, { passive: false });
+btnR.addEventListener('touchend',   (e) => { e.preventDefault(); btnR.classList.remove('pressed'); stopHold(); }, { passive: false });
+btnR.addEventListener('touchcancel',(e) => { e.preventDefault(); btnR.classList.remove('pressed'); stopHold(); }, { passive: false });
+
+/* Clic souris (desktop fallback) */
+btnL.addEventListener('mousedown', () => { btnL.classList.add('pressed'); startHold('left'); });
+btnR.addEventListener('mousedown', () => { btnR.classList.add('pressed'); startHold('right'); });
+window.addEventListener('mouseup', () => {
+  btnL.classList.remove('pressed'); btnR.classList.remove('pressed'); stopHold();
+});
+
+/* Init */
 loadLeaderboard();
+
 </script>
 	
 </body>
