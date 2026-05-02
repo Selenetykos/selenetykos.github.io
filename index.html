@@ -1018,11 +1018,14 @@
   
   <button id="game-close-btn" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;">✕ Quitter</button>
 
-  <div id="game-hud" style="display:none; width:420px; justify-content:space-between; margin-bottom:10px; font-family:sans-serif; color:white;">
-    <div>Score <span id="hud-score">0</span></div>
-    <div style="color:#7eb8f7;">← →</div>
-    <div>Niveau <span id="hud-level">1</span></div>
-  </div>
+<div id="game-hud" style="display:none; width:420px; justify-content:center; margin-bottom:10px; font-family:sans-serif; color:white;">
+  <div style="font-size: 1.2rem; font-weight: bold;">Score <span id="hud-score">0</span></div>
+</div>
+
+<div id="mobile-controls" style="display:none;">
+  <div id="btn-left" style="position:fixed; left:0; bottom:0; width:50%; height:80%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
+  <div id="btn-right" style="position:fixed; right:0; bottom:0; width:50%; height:80%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
+</div>
 
   <div id="game-title-screen" style="display:flex; flex-direction:column; align-items:center; color:white; text-align:center;">
     <div style="font-size:3rem; margin-bottom:10px;">🚀</div>
@@ -1109,8 +1112,10 @@ const showScreen = (name) => {
   document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
   document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
   document.getElementById('game-hud').style.display = name === 'play' ? 'flex' : 'none';
+  // Affiche les zones tactiles seulement en plein jeu
+  document.getElementById('mobile-controls').style.display = name === 'play' ? 'block' : 'none';
 };
-
+	
 // --- LEADERBOARD ---
 const loadLeaderboard = async () => {
   const el = document.getElementById('lb-list');
@@ -1253,7 +1258,7 @@ function animate() {
 
   score += 0.2;
   document.getElementById('hud-score').textContent = Math.floor(score);
-  document.getElementById('hud-level').textContent = Math.floor(1 + score/200);
+  //document.getElementById('hud-level').textContent = Math.floor(1 + score/200); Level
   animId = requestAnimationFrame(animate);
 }
 
@@ -1275,6 +1280,18 @@ document.getElementById('btn-replay').addEventListener('click', startGame);
 document.getElementById('save-score-btn').addEventListener('click', saveScore);
 document.getElementById('game-close-btn').addEventListener('click', () => location.reload());
 document.getElementById('btn-exit').addEventListener('click', () => location.reload());
+
+// Contrôles tactiles
+document.getElementById('btn-left').addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameActive) player.x = Math.max(0, player.x - 35);
+});
+
+document.getElementById('btn-right').addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameActive) player.x = Math.min(canvas.width - player.w, player.x + 35);
+});
+	
 </script>
 	
 </body>
