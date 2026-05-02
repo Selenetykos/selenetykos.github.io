@@ -1014,182 +1014,253 @@
   });
 </script>
 
-<div id="game-overlay" style="display:none;">
-  <button id="game-close-btn">✕ Quitter</button>
+<div id="game-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2,2,15,0.98); z-index:10000; flex-direction:column; align-items:center; justify-content:center; font-family:'Segoe UI', Roboto, sans-serif; color:white;">
+    
+    <button id="game-close-btn" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; padding:10px 15px; border-radius:8px; cursor:pointer; z-index:10002;">✕ Quitter</button>
 
-  <div id="game-hud" style="display:none; width:420px; justify-content:center; margin-bottom:10px;">
-    <div style="font-size: 1.4rem; font-weight: bold; color:white; font-family: sans-serif;">
-      Score <span id="hud-score">0</span>
+    <div id="game-hud" style="display:none; width:420px; text-align:center; margin-bottom:10px; z-index:10001;">
+        <div style="font-size: 0.9rem; opacity: 0.6; letter-spacing: 2px;">MISSION STATUS</div>
+        <div style="font-size: 2rem; font-weight: 800; color:#7eb8f7;" id="hud-score">0</div>
+        <div id="hud-mode" style="font-size: 0.7rem; color:#f87171; font-weight:bold; visibility:hidden;">⚠️ MODE HARD ACTIF</div>
     </div>
-  </div>
 
-  <div id="game-title-screen" style="display:flex;">
-    <div style="font-size:2.2rem; margin-bottom:4px;">🚀</div>
-    <h2>Mission Selenetykos</h2>
-    <p>Évitez les obstacles · Score 1000 = Mode Hard</p>
-    <div id="game-leaderboard">
-      <div id="lb-list"></div>
+    <div id="game-title-screen" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
+        <h1 style="font-size:2.5rem; margin-bottom:10px; background:linear-gradient(to bottom, #fff, #7eb8f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">SELENETYKOS</h1>
+        <div id="game-leaderboard" style="background:rgba(255,255,255,0.03); padding:20px; border-radius:15px; border:1px solid rgba(255,255,255,0.1); width:300px; margin-bottom:20px;">
+            <div style="font-weight:bold; margin-bottom:10px; color:#7eb8f7;">🏆 TOP PILOTES</div>
+            <div id="lb-list" style="font-size:0.9rem;">Chargement...</div>
+        </div>
+        <button class="game-btn" id="btn-start-mission" style="padding:15px 40px; background:#7eb8f7; color:#02020f; border:none; border-radius:50px; font-weight:bold; font-size:1.1rem; cursor:pointer; transition:0.3s; box-shadow:0 0 20px rgba(126,184,247,0.4);">LANCER LA MISSION</button>
     </div>
-    <button class="game-btn" id="btn-start-mission">Lancer la mission</button>
-  </div>
 
-  <div id="game-canvas-wrap" style="display:none;">
-    <canvas id="gameCanvas" width="420" height="580"></canvas>
-  </div>
+    <div id="game-canvas-wrap" style="display:none; position:relative; box-shadow:0 0 50px rgba(0,0,0,0.5); border-radius:10px; overflow:hidden;">
+        <canvas id="gameCanvas" width="420" height="580"></canvas>
+    </div>
 
-  <div id="mobile-controls" style="display:none;">
-    <div id="btn-left" style="position:fixed; left:0; top:0; width:50%; height:100%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
-    <div id="btn-right" style="position:fixed; right:0; top:0; width:50%; height:100%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
-  </div>
+    <div id="mobile-controls" style="display:none;">
+        <div id="btn-left" style="position:fixed; left:0; top:0; width:50%; height:100%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
+        <div id="btn-right" style="position:fixed; right:0; top:0; width:50%; height:100%; z-index:10001; -webkit-tap-highlight-color:transparent;"></div>
+    </div>
 
-  <div id="game-over-screen" style="display:none;">
-    <h3>Mission Échouée</h3>
-    <div id="game-final-score">0</div>
-    <input id="pseudo-input" type="text" maxlength="16" placeholder="Ton pseudo..."/>
-    <button id="save-score-btn">OK</button>
-    <div id="save-feedback"></div>
-    <button class="game-btn" id="btn-replay">Rejouer</button>
-  </div>
+    <div id="game-over-screen" style="display:none; flex-direction:column; align-items:center;">
+        <h2 style="color:#f87171;">VAISSEAU DÉTRUIT</h2>
+        <div id="game-final-score" style="font-size:3rem; font-weight:bold; margin:10px 0;">0</div>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input id="pseudo-input" type="text" maxlength="12" placeholder="Ton pseudo" style="padding:10px; border-radius:5px; border:none; background:rgba(255,255,255,0.1); color:white;"/>
+            <button id="save-score-btn" style="padding:10px 20px; background:#7eb8f7; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">ENREGISTRER</button>
+        </div>
+        <div id="save-feedback" style="font-size:0.8rem; margin-bottom:20px;"></div>
+        <button class="game-btn" id="btn-replay" style="padding:12px 30px; border:2px solid #7eb8f7; background:none; color:#7eb8f7; border-radius:50px; cursor:pointer; font-weight:bold;">TENTER À NOUVEAU</button>
+    </div>
 </div>
-
+	
 	
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
-  authDomain: "selenetykos-63361.firebaseapp.com",
-  projectId: "selenetykos-63361",
-  storageBucket: "selenetykos-63361.firebasestorage.app",
-  messagingSenderId: "284139581187",
-  appId: "1:284139581187:web:86c38f70b37cebcfae8336"
+    apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
+    authDomain: "selenetykos-63361.firebaseapp.com",
+    projectId: "selenetykos-63361",
+    storageBucket: "selenetykos-63361.firebasestorage.app",
+    messagingSenderId: "284139581187",
+    appId: "1:284139581187:web:86c38f70b37cebcfae8336"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let canvas, ctx, player, obstacles, stars2, animId, score, gameActive, startTime;
+let canvas, ctx, player, obstacles, stars, animId, score, gameActive, startTime;
 let inputSequence = "";
 const secretCode = "mdn";
 
 const showScreen = (name) => {
-  document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
-  document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
-  document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
-  document.getElementById('game-hud').style.display = name === 'play' ? 'flex' : 'none';
-  document.getElementById('mobile-controls').style.display = name === 'play' ? 'block' : 'none';
+    document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
+    document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
+    document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
+    document.getElementById('game-hud').style.display = name === 'play' ? 'block' : 'none';
+    document.getElementById('mobile-controls').style.display = name === 'play' ? 'block' : 'none';
 };
 
-// --- DESSINS ---
+// --- RENDERER HAUTE QUALITÉ ---
 function drawRocket(x, y) {
-  const cx = x + 15;
-  const flameH = 12 + Math.random() * 10;
-  const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
-  grad.addColorStop(0, "rgba(255,200,50,0.95)"); grad.addColorStop(1, "rgba(255,50,0,0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath(); ctx.moveTo(x + 8, y + 50); ctx.lineTo(x + 22, y + 50); ctx.lineTo(cx, y + 50 + flameH); ctx.fill();
-  ctx.fillStyle = "#f0f2f7"; ctx.beginPath(); ctx.roundRect(x + 7, y + 12, 16, 38, 2); ctx.fill();
-  ctx.fillStyle = "#7eb8f7"; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x + 7, y + 12); ctx.lineTo(x + 23, y + 12); ctx.fill();
+    ctx.save();
+    const cx = x + 15;
+    // Flamme dynamique
+    const flameH = 15 + Math.random() * 15;
+    const g = ctx.createLinearGradient(cx, y+45, cx, y+45+flameH);
+    g.addColorStop(0, '#fff'); g.addColorStop(0.2, '#7eb8f7'); g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x+10, y+45); ctx.lineTo(x+20, y+45); ctx.lineTo(cx, y+45+flameH); ctx.fill();
+
+    // Corps de la fusée
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.roundRect(x+7, y+10, 16, 35, 5); ctx.fill();
+    // Pointe
+    ctx.fillStyle = '#7eb8f7';
+    ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x+7, y+15); ctx.lineTo(x+23, y+15); ctx.fill();
+    // Hublot brillant
+    ctx.fillStyle = '#02020f';
+    ctx.beginPath(); ctx.arc(cx, y+22, 4, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
 }
 
 function drawObstacle(obs) {
-  ctx.save();
-  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
-  ctx.fillStyle = obs.color;
-  ctx.beginPath(); ctx.arc(0, 0, obs.size/2, 0, Math.PI * 2); ctx.fill();
-  if (obs.type === 'planet' && obs.hasRing) {
-    ctx.strokeStyle = obs.color; ctx.globalAlpha = 0.4; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(0, 0, obs.size, obs.size*0.3, 0.3, 0, Math.PI*2); ctx.stroke();
-  }
-  ctx.restore();
+    ctx.save();
+    ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+    
+    if (obs.type === 'planet') {
+        // Planète avec ombre portée
+        const grad = ctx.createRadialGradient(-obs.size/4, -obs.size/4, 0, 0, 0, obs.size/2);
+        grad.addColorStop(0, obs.color);
+        grad.addColorStop(1, '#000');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(0, 0, obs.size/2, 0, Math.PI*2); ctx.fill();
+        
+        if (obs.hasRing) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.ellipse(0, 0, obs.size, obs.size/3, 0.5, 0, Math.PI*2); ctx.stroke();
+        }
+    } else {
+        // Astéroïde texturé
+        ctx.fillStyle = '#444';
+        ctx.beginPath(); ctx.arc(0, 0, obs.size/2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath(); ctx.arc(obs.size/5, obs.size/5, obs.size/5, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
 }
 
-// --- LOGIQUE CORE ---
+// --- LOGIQUE DU JEU ---
 function animate() {
-  if (!gameActive) return;
-  ctx.fillStyle = "#02020f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (!gameActive) return;
+    ctx.fillStyle = "#02020f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  stars2.forEach(s => {
-    s.y += s.speed;
-    if (s.y > canvas.height) s.y = 0;
-    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
-  });
-
-  drawRocket(player.x, player.y);
-
-  // --- DIFFICULTÉ ---
-  const isHard = score >= 1000;
-  const spawnRate = isHard ? 0.05 : 0.035;
-  
-  if (Math.random() < spawnRate) {
-    const isPlanet = Math.random() > 0.8;
-    const sz = isPlanet ? 35 + Math.random()*15 : 18 + Math.random()*12;
-    obstacles.push({
-      x: Math.random()*(canvas.width-sz), y: -sz, size: sz,
-      type: isPlanet ? 'planet' : 'asteroid',
-      color: isPlanet ? `hsl(${Math.random()*360},50%,50%)` : "#555",
-      hasRing: isPlanet && Math.random() > 0.5
+    // Etoiles
+    stars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > canvas.height) s.y = 0;
+        ctx.fillStyle = `rgba(255,255,255,${s.opacity})`;
+        ctx.fillRect(s.x, s.y, s.size, s.size);
     });
-  }
 
-  const speed = isHard ? (5 + (score-1000)/200) : (3.2 + score/300);
+    const isHard = score >= 1000;
+    document.getElementById('hud-mode').style.visibility = isHard ? 'visible' : 'hidden';
 
-  obstacles.forEach((obs, i) => {
-    obs.y += speed;
-    drawObstacle(obs);
-    const m = isHard ? 2 : 5; // Hitbox plus sévère en Hard
-    if (player.x+m < obs.x+obs.size-m && player.x+player.w-m > obs.x+m &&
-        player.y+m < obs.y+obs.size-m && player.y+player.h-m > obs.y+m) gameOver();
-    if (obs.y > canvas.height) obstacles.splice(i, 1);
-  });
+    // Difficulté progressive
+    const spawnRate = isHard ? 0.06 : 0.035;
+    if (Math.random() < spawnRate) {
+        const isPlanet = Math.random() > 0.7;
+        const sz = isPlanet ? 40 + Math.random()*20 : 20 + Math.random()*15;
+        obstacles.push({
+            x: Math.random()*(canvas.width-sz), y: -sz, size: sz,
+            type: isPlanet ? 'planet' : 'asteroid',
+            color: `hsl(${Math.random()*360}, 60%, 60%)`,
+            hasRing: Math.random() > 0.6
+        });
+    }
 
-  score += 0.2;
-  document.getElementById('hud-score').textContent = Math.floor(score);
-  animId = requestAnimationFrame(animate);
+    const speed = isHard ? (6 + (score-1000)/150) : (3.5 + score/250);
+
+    obstacles.forEach((obs, i) => {
+        obs.y += speed;
+        drawObstacle(obs);
+        
+        // Collision (Hitbox optimisée)
+        const hit = 6;
+        if (player.x+hit < obs.x+obs.size-hit && player.x+player.w-hit > obs.x+hit &&
+            player.y+hit < obs.y+obs.size-hit && player.y+player.h-hit > obs.y+hit) {
+            gameOver();
+        }
+        if (obs.y > canvas.height) obstacles.splice(i, 1);
+    });
+
+    drawRocket(player.x, player.y);
+    score += 0.25;
+    document.getElementById('hud-score').textContent = Math.floor(score);
+    animId = requestAnimationFrame(animate);
 }
 
+// --- CLASSEMENT FIREBASE ---
+const loadLeaderboard = async () => {
+    const el = document.getElementById('lb-list');
+    try {
+        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
+        const snap = await getDocs(q);
+        el.innerHTML = snap.docs.map((d, i) => `
+            <div style="display:flex; justify-content:space-between; margin:5px 0; opacity:${1 - i*0.15}">
+                <span>${i+1}. ${d.data().name}</span>
+                <span style="color:#7eb8f7; font-weight:bold;">${d.data().score}</span>
+            </div>
+        `).join('') || "Aucun score";
+    } catch(e) { el.innerHTML = "Erreur chargement"; }
+};
+
+const saveScore = async () => {
+    const name = document.getElementById('pseudo-input').value.trim();
+    const btn = document.getElementById('save-score-btn');
+    if (!name || btn.disabled) return;
+    btn.disabled = true;
+    try {
+        await addDoc(collection(db, "scores"), { name, score: Math.floor(score), date: Date.now() });
+        document.getElementById('save-feedback').textContent = "Score enregistré !";
+        loadLeaderboard();
+    } catch(e) { btn.disabled = false; }
+};
+
+// --- INITIALISATION ---
 const startGame = () => {
-  canvas = document.getElementById("gameCanvas");
-  ctx = canvas.getContext("2d");
-  showScreen('play');
-  score = 0; gameActive = true; startTime = Date.now();
-  obstacles = [];
-  player = { x: canvas.width/2 - 15, y: canvas.height - 90, w: 30, h: 50 };
-  stars2 = Array.from({length: 60}, () => ({
-    x: Math.random()*canvas.width, y: Math.random()*canvas.height,
-    r: Math.random()*1.2, speed: Math.random()*2+1
-  }));
-  animate();
+    canvas = document.getElementById("gameCanvas");
+    ctx = canvas.getContext("2d");
+    showScreen('play');
+    score = 0; gameActive = true; obstacles = [];
+    player = { x: canvas.width/2-15, y: canvas.height-100, w: 30, h: 50 };
+    stars = Array.from({length: 100}, () => ({
+        x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+        size: Math.random()*2, speed: Math.random()*3 + 1, opacity: Math.random()
+    }));
+    animate();
 };
 
 const gameOver = () => {
-  gameActive = false; cancelAnimationFrame(animId);
-  document.getElementById('game-final-score').textContent = Math.floor(score);
-  showScreen('over');
+    gameActive = false; cancelAnimationFrame(animId);
+    document.getElementById('game-final-score').textContent = Math.floor(score);
+    showScreen('over');
 };
 
-// --- INPUTS ---
-window.addEventListener("keydown", (e) => {
-  if (gameActive) {
-    if (e.key === "ArrowLeft") player.x = Math.max(0, player.x - 28);
-    if (e.key === "ArrowRight") player.x = Math.min(canvas.width-player.w, player.x + 28);
-  } else {
-    inputSequence = (inputSequence + e.key.toLowerCase()).slice(-3);
-    if (inputSequence === secretCode) { document.getElementById('game-overlay').style.display = 'flex'; }
-  }
-});
+const closeGame = () => {
+    gameActive = false;
+    cancelAnimationFrame(animId);
+    document.getElementById('game-overlay').style.display = 'none';
+};
 
-// Tactile Mobile
-const handleTouch = (dir) => { if(gameActive) player.x = dir === 'L' ? Math.max(0, player.x-35) : Math.min(canvas.width-player.w, player.x+35); };
-document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('L'); });
-document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('R'); });
-
-// Boutons
+// --- EVENTS ---
 document.getElementById('btn-start-mission').addEventListener('click', startGame);
 document.getElementById('btn-replay').addEventListener('click', startGame);
-document.getElementById('game-close-btn').addEventListener('click', () => location.reload());
+document.getElementById('save-score-btn').addEventListener('click', saveScore);
+document.getElementById('game-close-btn').addEventListener('click', closeGame);
 
+window.addEventListener("keydown", (e) => {
+    if (gameActive) {
+        if (e.key === "ArrowLeft") player.x = Math.max(0, player.x - 30);
+        if (e.key === "ArrowRight") player.x = Math.min(canvas.width-player.w, player.x + 30);
+    } else {
+        inputSequence = (inputSequence + e.key.toLowerCase()).slice(-3);
+        if (inputSequence === secretCode) {
+            document.getElementById('game-overlay').style.display = 'flex';
+            loadLeaderboard();
+        }
+    }
+});
+
+// Mobile
+const move = (dir) => { if(gameActive) player.x = dir === 'L' ? Math.max(0, player.x-35) : Math.min(canvas.width-player.w, player.x+35); };
+document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); move('L'); });
+document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); move('R'); });
+
+loadLeaderboard();
 </script>
 	
 </body>
