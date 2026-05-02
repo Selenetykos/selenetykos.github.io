@@ -1144,7 +1144,7 @@ window.saveScore = async function() {
 <script>
 // --- SYSTÈME DE TOUCHES SECRÈTES ---
 let inputSequence = "";
-const secretCode = " sely";
+const secretCode = "mdn";
 
 window.addEventListener("keydown", (e) => {
   if (gameActive) return; // ne pas interférer pendant le jeu
@@ -1445,7 +1445,7 @@ function animate() {
   score += 0.4;
   window._gameScore = score;
   document.getElementById('hud-score').textContent = Math.floor(score);
-  document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
+  //document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
   // Indicateur de zone danger
   const dangerEl = document.getElementById('hud-danger');
   if (dangerEl) {
