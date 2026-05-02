@@ -417,23 +417,275 @@
       width: 100%;
       height: 100%;
     }
-	#game-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: radial-gradient(circle, #050510 0%, #000 100%);
-      z-index: 10000;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #00d4ff;
-      font-family: sans-serif;
-	}
-	#gameCanvas {
-      border: 3px solid #00d4ff;
-      background: #000;
-	}
+  /* ─── GAME OVERLAY ─── */
+  #game-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, #0a0c20 0%, #000008 100%);
+    z-index: 10000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    color: var(--moon);
+  }
+
+  #game-title-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+  }
+  #game-title-screen h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.2rem, 4vw, 2rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #fff8c0, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
+  #game-title-screen p {
+    color: rgba(255,255,227,0.55);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+  }
+  .game-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--accent), var(--glow));
+    border: none;
+    border-radius: 3px;
+    color: var(--dark);
+    padding: 14px 36px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .game-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+
+  #game-close-btn {
+    position: absolute;
+    top: 20px; right: 24px;
+    background: transparent;
+    border: 1px solid rgba(255,255,227,0.2);
+    color: rgba(255,255,227,0.5);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 8px 18px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #game-close-btn:hover { color: var(--moon); border-color: var(--accent); }
+
+  #game-hud {
+    display: none;
+    position: absolute;
+    top: 20px; left: 0; right: 0;
+    padding: 0 24px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .hud-item {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .hud-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--moon);
+    display: block;
+    margin-top: 2px;
+  }
+
+  #game-canvas-wrap {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  #gameCanvas {
+    border: 1px solid rgba(126,184,247,0.3);
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(126,184,247,0.15), inset 0 0 60px rgba(0,0,8,0.8);
+    display: block;
+  }
+  #game-hint {
+    margin-top: 12px;
+    color: rgba(255,255,227,0.3);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+  }
+
+  #game-over-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    text-align: center;
+  }
+  #game-over-screen h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--glow);
+    margin: 0;
+  }
+  #game-final-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff8c0, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  #game-over-screen p {
+    color: rgba(255,255,227,0.45);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+  .game-over-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+  /* ─── LEADERBOARD ─── */
+  #game-leaderboard {
+    width: 100%;
+    max-width: 340px;
+    margin-top: 10px;
+  }
+  .lb-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.7;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    margin-bottom: 5px;
+    background: rgba(255,255,227,0.04);
+    border: 1px solid rgba(255,255,227,0.07);
+    font-size: 0.82rem;
+  }
+  .lb-row.lb-top {
+    background: rgba(167,139,250,0.1);
+    border-color: rgba(167,139,250,0.25);
+  }
+  .lb-rank {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: rgba(255,255,227,0.35);
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lb-rank.gold   { color: #ffd700; }
+  .lb-rank.silver { color: #c0c0c0; }
+  .lb-rank.bronze { color: #cd7f32; }
+  .lb-name {
+    flex: 1;
+    color: rgba(255,255,227,0.8);
+    font-family: 'Exo 2', sans-serif;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .lb-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .lb-empty {
+    text-align: center;
+    color: rgba(255,255,227,0.25);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.8rem;
+    padding: 14px 0;
+  }
+  .lb-loading {
+    text-align: center;
+    color: rgba(126,184,247,0.4);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    padding: 14px 0;
+  }
+
+  /* pseudo input on game over */
+  #pseudo-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #pseudo-input {
+    flex: 1;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,227,0.2);
+    border-radius: 3px;
+    color: var(--moon);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    outline: none;
+    max-width: 180px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    transition: border-color 0.2s;
+  }
+  #pseudo-input::placeholder { color: rgba(255,255,227,0.25); }
+  #pseudo-input:focus { border-color: var(--accent); }
+  #save-score-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--accent), var(--glow));
+    border: none;
+    border-radius: 3px;
+    color: var(--dark);
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  #save-score-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #save-feedback {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.75rem;
+    color: var(--accent);
+    min-height: 18px;
+    text-align: center;
+  }
 
   </style>
 </head>
@@ -763,148 +1015,401 @@
 </script>
 
 <div id="game-overlay">
-    <h2 style="margin-bottom: 10px;">Mission Selenetykos : Quittez la Terre</h2>
-    <div id="score-display" style="font-size: 20px; margin-bottom: 10px;">Score: 0</div>
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
-    <p style="margin-top: 15px;">Code secret activé ! Touches : ← → pour bouger</p>
+  <button id="game-close-btn" onclick="closeGame()">✕ Quitter</button>
+
+  <div id="game-hud">
+    <div class="hud-item">Score<span class="hud-val" id="hud-score">0</span></div>
+    <div class="hud-item" style="text-align:center;">Mission Selenetykos<span class="hud-val" style="color:var(--accent);">← →</span></div>
+    <div class="hud-item" style="text-align:right;">Niveau<span class="hud-val" id="hud-level">1</span></div>
+  </div>
+
+  <!-- Écran titre -->
+  <div id="game-title-screen">
+    <div style="font-size:2.2rem; margin-bottom:4px;">🚀</div>
+    <h2>Mission Selenetykos</h2>
+    <p>Pilotez la fusée · Évitez les astéroïdes</p>
+    <p style="font-size:0.78rem;">Touches ← → pour manœuvrer</p>
+
+    <div id="game-leaderboard">
+      <div class="lb-title">🏆 Meilleurs pilotes</div>
+      <div id="lb-list"><div class="lb-loading">Chargement…</div></div>
+    </div>
+
+    <button class="game-btn" onclick="startGame()" style="margin-top:4px;">Lancer la mission</button>
+  </div>
+
+  <!-- Canvas de jeu -->
+  <div id="game-canvas-wrap">
+    <canvas id="gameCanvas" width="420" height="580"></canvas>
+    <div id="game-hint">← → pour manœuvrer</div>
+  </div>
+
+  <!-- Écran Game Over -->
+  <div id="game-over-screen">
+    <div style="font-size:2.2rem;">💥</div>
+    <h3>Vaisseau perdu dans l'espace</h3>
+    <div style="color:rgba(255,255,227,0.45); font-family:'Exo 2',sans-serif; font-size:0.85rem;">Score final</div>
+    <div id="game-final-score">0</div>
+    <div id="pseudo-row">
+      <input id="pseudo-input" type="text" maxlength="16" placeholder="Votre pseudo…" autocomplete="off"/>
+      <button id="save-score-btn" onclick="saveScore()">Sauvegarder</button>
+    </div>
+    <div id="save-feedback"></div>
+    <div class="game-over-btns">
+      <button class="game-btn" onclick="startGame()">Rejouer</button>
+      <button class="game-btn" style="background: rgba(255,255,227,0.08); color: var(--moon); border: 1px solid rgba(255,255,227,0.2);" onclick="closeGame()">Quitter</button>
+    </div>
+  </div>
 </div>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
+  authDomain: "selenetykos-63361.firebaseapp.com",
+  projectId: "selenetykos-63361",
+  storageBucket: "selenetykos-63361.firebasestorage.app",
+  messagingSenderId: "284139581187",
+  appId: "1:284139581187:web:86c38f70b37cebcfae8336"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const SCORES_COL = "scores";
+const LB_MAX = 8;
+
+window._fbReady = true;
+
+window.loadLeaderboard = async function() {
+  const el = document.getElementById('lb-list');
+  if (!el) return;
+  el.innerHTML = '<div class="lb-loading">Chargement…</div>';
+  try {
+    const q = query(collection(db, SCORES_COL), orderBy("score", "desc"), limit(LB_MAX));
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => d.data());
+    window.renderLeaderboard(entries);
+  } catch(e) {
+    el.innerHTML = '<div class="lb-empty">Impossible de charger les scores.</div>';
+    console.error(e);
+  }
+};
+
+window.saveScore = async function() {
+  const nameInput = document.getElementById('pseudo-input');
+  const btn = document.getElementById('save-score-btn');
+  const feedback = document.getElementById('save-feedback');
+  const name = nameInput.value.trim().substring(0, 16);
+  if (!name) { feedback.textContent = "Entre ton pseudo d'abord !"; return; }
+
+  btn.disabled = true;
+  feedback.textContent = 'Sauvegarde…';
+
+  try {
+    const finalScore = Math.floor(window._gameScore || 0);
+
+    const existing = await getDocs(
+      query(collection(db, SCORES_COL), where("name", "==", name))
+    );
+    let bestPrev = 0;
+    existing.forEach(d => {
+      if (d.data().score > bestPrev) bestPrev = d.data().score;
+    });
+
+    if (finalScore > bestPrev) {
+      for (const d of existing.docs) await deleteDoc(doc(db, SCORES_COL, d.id));
+      await addDoc(collection(db, SCORES_COL), { name, score: finalScore, date: Date.now() });
+      feedback.textContent = '✓ Nouveau record enregistré !';
+    } else {
+      feedback.textContent = `🌙 Ton record est ${bestPrev} — continue !`;
+    }
+    feedback.style.color = 'var(--accent)';
+    nameInput.value = '';
+    window.loadLeaderboard();
+  } catch(e) {
+    feedback.textContent = 'Erreur de sauvegarde.';
+    feedback.style.color = '#f87171';
+    btn.disabled = false;
+    console.error(e);
+  }
+};
+</script>
+
 <script>
-// --- SYSTÈME DE TOUCHES SECRETES ---
+// --- SYSTÈME DE TOUCHES SECRÈTES ---
 let inputSequence = "";
-const secretCode = " sely"; // Espace + S + E + L + Y
+const secretCode = " sely";
 
 window.addEventListener("keydown", (e) => {
-    inputSequence += e.key.toLowerCase();
-    if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
-    if (inputSequence === secretCode) {
-        document.getElementById('game-overlay').style.display = 'flex';
-        initGame();
-    }
+  if (gameActive) return; // ne pas interférer pendant le jeu
+  inputSequence += e.key.toLowerCase();
+  if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
+  if (inputSequence === secretCode) {
+    openGame();
+  }
 });
 
-// --- LOGIQUE DU MINI-JEU AMÉLIORÉE ---
-let canvas, ctx, player, obstacles, score, gameActive;
+// --- STATE ---
+let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
 
-function initGame() {
-    canvas = document.getElementById("gameCanvas");
-    ctx = canvas.getContext("2d");
-    player = { x: 185, y: 520, w: 30, h: 50 };
-    obstacles = [];
-    score = 0;
-    gameActive = true;
-    
-    // Contrôles (On s'assure qu'ils ne s'ajoutent pas plusieurs fois)
-    window.removeEventListener("keydown", movePlayer); 
-    window.addEventListener("keydown", movePlayer);
-    animate();
+function openGame() {
+  document.getElementById('game-overlay').style.display = 'flex';
+  showScreen('title');
+  if (window.loadLeaderboard) window.loadLeaderboard();
+}
+
+function closeGame() {
+  gameActive = false;
+  cancelAnimationFrame(animId);
+  document.getElementById('game-overlay').style.display = 'none';
+  showScreen('title');
+  inputSequence = "";
+}
+
+function showScreen(name) {
+  document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
+  document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
+  document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
+  document.getElementById('game-hud').style.display = name === 'play' ? 'flex' : 'none';
+}
+
+function startGame() {
+  showScreen('play');
+  canvas = document.getElementById("gameCanvas");
+  ctx = canvas.getContext("2d");
+
+  // Générer les étoiles fixes du jeu
+  stars2 = Array.from({length: 80}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.3 + 0.2,
+    speed: Math.random() * 1.5 + 0.5,
+  }));
+
+  player = { x: canvas.width/2 - 15, y: canvas.height - 90, w: 30, h: 50 };
+  obstacles = [];
+  score = 0;
+  gameActive = true;
+
+  window.removeEventListener("keydown", movePlayer);
+  window.addEventListener("keydown", movePlayer);
+  cancelAnimationFrame(animId);
+  animate();
 }
 
 function movePlayer(e) {
-    if(e.key === "ArrowLeft" && player.x > 0) player.x -= 25;
-    if(e.key === "ArrowRight" && player.x < canvas.width - 30) player.x += 25;
+  if (!gameActive) return;
+  const step = 28;
+  if (e.key === "ArrowLeft")  player.x = Math.max(0, player.x - step);
+  if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + step);
 }
 
+// --- DESSIN FUSÉE ---
 function drawRocket(x, y) {
-    // Corps de la fusée (Gris métal)
-    ctx.fillStyle = "#E0E0E0"; 
-    ctx.fillRect(x + 7, y + 10, 16, 30);
-    
-    // Pointe (Rouge Selenetykos)
-    ctx.fillStyle = "#FF3D00"; 
-    ctx.beginPath();
-    ctx.moveTo(x + 15, y);
-    ctx.lineTo(x + 7, y + 10);
-    ctx.lineTo(x + 23, y + 10);
-    ctx.fill();
+  const cx = x + 15;
 
-    // Ailerons latéraux
-    ctx.fillStyle = "#FF3D00";
-    ctx.fillRect(x + 2, y + 32, 5, 12); // Gauche
-    ctx.fillRect(x + 23, y + 32, 5, 12); // Droite
+  // Flamme
+  const flameH = 12 + Math.random() * 10;
+  const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
+  grad.addColorStop(0, "rgba(255,200,50,0.95)");
+  grad.addColorStop(0.5, "rgba(255,90,10,0.7)");
+  grad.addColorStop(1, "rgba(255,50,0,0)");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(x + 8, y + 50);
+  ctx.lineTo(x + 22, y + 50);
+  ctx.lineTo(cx, y + 50 + flameH);
+  ctx.closePath();
+  ctx.fill();
 
-    // Hublot (Bleu ciel)
-    ctx.fillStyle = "#00d4ff";
-    ctx.beginPath();
-    ctx.arc(x + 15, y + 20, 4, 0, Math.PI * 2);
-    ctx.fill();
+  // Corps
+  const bodyGrad = ctx.createLinearGradient(x+7, 0, x+23, 0);
+  bodyGrad.addColorStop(0, "#c8ccd8");
+  bodyGrad.addColorStop(0.5, "#f0f2f7");
+  bodyGrad.addColorStop(1, "#9aa0b0");
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.roundRect(x + 7, y + 12, 16, 38, 2);
+  ctx.fill();
 
-    // Flammes réactives
-    ctx.fillStyle = Math.random() > 0.5 ? "orange" : "yellow";
-    ctx.fillRect(x + 10, y + 40, 10, 15);
+  // Ailerons
+  ctx.fillStyle = "#7eb8f7";
+  ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.closePath(); ctx.fill();
+
+  // Pointe
+  const tipGrad = ctx.createLinearGradient(x+7, y+12, x+23, y+12);
+  tipGrad.addColorStop(0, "#a78bfa");
+  tipGrad.addColorStop(1, "#7eb8f7");
+  ctx.fillStyle = tipGrad;
+  ctx.beginPath();
+  ctx.moveTo(cx, y);
+  ctx.lineTo(x + 7, y + 12);
+  ctx.lineTo(x + 23, y + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Hublot
+  ctx.fillStyle = "#00d4ff";
+  ctx.shadowColor = "#00d4ff";
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.arc(cx, y + 22, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
 }
 
+// --- DESSIN OBSTACLE ---
+function drawObstacle(obs) {
+  ctx.save();
+  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  const r = obs.size / 2;
+
+  if (obs.type === 'planet') {
+    // Planète avec anneau possible
+    ctx.fillStyle = obs.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    if (obs.hasRing) {
+      ctx.strokeStyle = obs.color;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.7, r * 0.35, 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    // Brillance
+    const gl = ctx.createRadialGradient(-r*0.35, -r*0.35, r*0.05, 0, 0, r);
+    gl.addColorStop(0, "rgba(255,255,255,0.35)");
+    gl.addColorStop(1, "rgba(0,0,0,0.5)");
+    ctx.fillStyle = gl;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Astéroïde irrégulier
+    ctx.fillStyle = obs.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Cratères
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.beginPath(); ctx.arc(-r*0.3, -r*0.25, r*0.22, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.25, r*0.2, r*0.14, 0, Math.PI*2); ctx.fill();
+    // Highlight
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, r*0.18, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// --- BOUCLE DE JEU ---
 function animate() {
-    if (!gameActive) return;
-    
-    // Fond de l'espace profond
-    ctx.fillStyle = "#050510";
-    ctx.fillRect(0,0, canvas.width, canvas.height);
+  if (!gameActive) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Étoiles défilantes (Effet de vitesse)
-    ctx.fillStyle = "white";
-    for(let i=0; i<15; i++) {
-        let yStar = (Date.now()/5 + i*100) % 600;
-        ctx.fillRect(Math.random()*canvas.width, yStar, 1, 1);
-    }
+  // Fond dégradé
+  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, "#02020f");
+  bg.addColorStop(1, "#060618");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    drawRocket(player.x, player.y);
+  // Étoiles défilantes
+  const speed = 1.5 + score / 300;
+  stars2.forEach(s => {
+    s.y += s.speed * (speed / 1.5);
+    if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+    ctx.globalAlpha = 0.6 + Math.random() * 0.4;
+    ctx.fillStyle = "#fff8e0";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
 
-    // Création des obstacles
-    if (Math.random() < 0.04) {
-        let isPlanet = Math.random() > 0.8;
-        obstacles.push({ 
-            x: Math.random() * (canvas.width - 40), 
-            y: -60, 
-            size: isPlanet ? 40 + Math.random()*20 : 25 + Math.random()*20,
-            type: isPlanet ? 'planet' : 'asteroid',
-            color: isPlanet ? `hsl(${Math.random() * 360}, 60%, 50%)` : '#757575'
-        });
-    }
+  // Fusée
+  drawRocket(player.x, player.y);
 
-    obstacles.forEach((obs, index) => {
-        obs.y += 3.5 + (score / 200); // Accélération progressive
-        
-        ctx.save();
-        ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
-        
-        if (obs.type === 'asteroid') {
-            // Dessin Astéroïde avec relief
-            ctx.fillStyle = obs.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, obs.size/2, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = "rgba(0,0,0,0.2)"; // Cratères
-            ctx.beginPath();
-            ctx.arc(-obs.size/5, -obs.size/6, obs.size/6, 0, Math.PI*2);
-            ctx.fill();
-        } else {
-            // Dessin Planète avec ombre
-            ctx.fillStyle = obs.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, obs.size/2, 0, Math.PI*2);
-            ctx.fill();
-            let gradient = ctx.createRadialGradient(-obs.size/4, -obs.size/4, obs.size/10, 0, 0, obs.size/2);
-            gradient.addColorStop(0, "rgba(255,255,255,0.3)");
-            gradient.addColorStop(1, "rgba(0,0,0,0.4)");
-            ctx.fillStyle = gradient;
-            ctx.fill();
-        }
-        ctx.restore();
-
-        // Collision précise
-        if (player.x < obs.x + obs.size && player.x + 30 > obs.x && player.y < obs.y + obs.size && player.y + 50 > obs.y) {
-            gameActive = false;
-            alert("Vaisseau Selenetykos perdu dans l'espace ! Score : " + Math.floor(score));
-            location.reload();
-        }
-        if (obs.y > 600) obstacles.splice(index, 1);
+  // Spawn obstacles — légèrement moins fréquent pour faciliter
+  if (Math.random() < 0.032) {
+    const isPlanet = Math.random() > 0.78;
+    const sz = isPlanet ? 38 + Math.random()*22 : 20 + Math.random()*18;
+    obstacles.push({
+      x: Math.random() * (canvas.width - sz),
+      y: -sz - 10,
+      size: sz,
+      type: isPlanet ? 'planet' : 'asteroid',
+      color: isPlanet
+        ? `hsl(${Math.floor(Math.random()*360)},55%,48%)`
+        : `hsl(${200 + Math.floor(Math.random()*30)},8%,${45+Math.floor(Math.random()*20)}%)`,
+      hasRing: isPlanet && Math.random() > 0.55,
     });
+  }
 
-    score += 0.5;
-    document.getElementById("score-display").innerText = "Score: " + Math.floor(score);
-    requestAnimationFrame(animate);
+  // Vitesse progressive (départ plus doux)
+  const vel = 2.8 + score / 220;
+
+  obstacles.forEach((obs, i) => {
+    obs.y += vel;
+    drawObstacle(obs);
+    // Suppression hors canvas
+    if (obs.y > canvas.height + obs.size) { obstacles.splice(i, 1); return; }
+    // Collision (hitbox légèrement réduite pour être plus fair)
+    const margin = 6;
+    if (
+      player.x + margin < obs.x + obs.size - margin &&
+      player.x + player.w - margin > obs.x + margin &&
+      player.y + margin < obs.y + obs.size - margin &&
+      player.y + player.h - margin > obs.y + margin
+    ) {
+      gameOver();
+    }
+  });
+
+  score += 0.4;
+  window._gameScore = score;
+  document.getElementById('hud-score').textContent = Math.floor(score);
+  document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
+
+  animId = requestAnimationFrame(animate);
 }
+
+function gameOver() {
+  gameActive = false;
+  cancelAnimationFrame(animId);
+  window.removeEventListener("keydown", movePlayer);
+  document.getElementById('game-final-score').textContent = Math.floor(score);
+  document.getElementById('pseudo-input').value = '';
+  document.getElementById('save-feedback').textContent = '';
+  document.getElementById('save-score-btn').disabled = false;
+  showScreen('over');
+}
+
+// ─── LEADERBOARD RENDER ───
+window.renderLeaderboard = function(entries) {
+  const el = document.getElementById('lb-list');
+  if (!el) return;
+  if (!entries || entries.length === 0) {
+    el.innerHTML = '<div class="lb-empty">Aucun score encore — soyez le premier ! 🌙</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  const classes = ['gold','silver','bronze'];
+  el.innerHTML = entries.map((e, i) => {
+    const isTop = i === 0;
+    const medal = i < 3
+      ? `<span class="lb-rank ${classes[i]}">${medals[i]}</span>`
+      : `<span class="lb-rank">${i+1}</span>`;
+    const safeName = String(e.name).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
+  }).join('');
+};
 </script>
 	
 </body>
