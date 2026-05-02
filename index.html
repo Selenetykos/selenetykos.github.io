@@ -1014,41 +1014,50 @@
   });
 </script>
 
-<div id="game-overlay">
-  <button id="game-close-btn" onclick="closeGame()">✕ Quitter</button>
+<div id="game-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2,2,15,0.95); z-index:10000; flex-direction:column; align-items:center; justify-content:center;">
+  
+  <button id="game-close-btn" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;">✕ Quitter</button>
 
-  <div id="game-hud">
-    <div class="hud-item">Score<span class="hud-val" id="hud-score">0</span></div>
-    <div class="hud-item" style="text-align:center;">
-      <span id="hud-danger" style="display:none; font-family:'Orbitron',monospace; font-size:0.7rem; font-weight:700; letter-spacing:0.15em; animation: blink 0.6s ease-in-out infinite;"></span>
-      <span class="hud-val" style="color:var(--accent); font-size:0.7rem;">← →</span>
-    </div>
-    <div class="hud-item" style="text-align:right;">Niveau<span class="hud-val" id="hud-level">1</span></div>
+  <div id="game-hud" style="display:none; width:420px; justify-content:space-between; margin-bottom:10px; font-family:sans-serif; color:white;">
+    <div>Score <span id="hud-score">0</span></div>
+    <div style="color:#7eb8f7;">← →</div>
+    <div>Niveau <span id="hud-level">1</span></div>
   </div>
 
-  <!-- Écran titre -->
-<div id="game-overlay" style="display:none;">
-  <button id="game-close-btn">✕ Quitter</button>
-
-  <div id="game-hud" style="display:none;">
-    <div class="hud-item">Score <span class="hud-val" id="hud-score">0</span></div>
-    <div class="hud-item" style="text-align:center;">
-      <span id="hud-danger" style="display:none;"></span>
-      <span class="hud-val" style="color:var(--accent); font-size:0.7rem;">← →</span>
+  <div id="game-title-screen" style="display:flex; flex-direction:column; align-items:center; color:white; text-align:center;">
+    <div style="font-size:3rem; margin-bottom:10px;">🚀</div>
+    <h2 style="margin:0;">Mission Selenetykos</h2>
+    <p style="opacity:0.8;">Pilotez la fusée · Évitez les astéroïdes</p>
+    
+    <div id="game-leaderboard" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin:20px 0; width:280px;">
+      <div style="font-weight:bold; margin-bottom:10px;">🏆 Meilleurs pilotes</div>
+      <div id="lb-list">Chargement...</div>
     </div>
-    <div class="hud-item" style="text-align:right;">Niveau <span class="hud-val" id="hud-level">1</span></div>
+    
+    <button id="btn-start-mission" style="padding:12px 25px; background:#7eb8f7; border:none; border-radius:5px; color:#02020f; font-weight:bold; cursor:pointer;">Lancer la mission</button>
   </div>
 
-  <div id="game-title-screen" style="display:flex;">
-    <div style="font-size:2.2rem; margin-bottom:4px;">🚀</div>
-    <h2>Mission Selenetykos</h2>
-    <p>Pilotez la fusée · Évitez les astéroïdes</p>
-    <div id="game-leaderboard">
-      <div class="lb-title">🏆 Meilleurs pilotes</div>
-      <div id="lb-list"><div class="lb-loading">Chargement…</div></div>
-    </div>
-    <button class="game-btn" id="btn-start-mission">Lancer la mission</button>
+  <div id="game-canvas-wrap" style="display:none; border:2px solid rgba(255,255,255,0.1);">
+    <canvas id="gameCanvas" width="420" height="580"></canvas>
   </div>
+
+  <div id="game-over-screen" style="display:none; flex-direction:column; align-items:center; color:white;">
+    <div style="font-size:3rem;">💥</div>
+    <h3>Mission Échouée</h3>
+    <div id="game-final-score" style="font-size:2rem; font-weight:bold; margin-bottom:20px;">0</div>
+    
+    <div style="margin-bottom:20px;">
+      <input id="pseudo-input" type="text" maxlength="16" placeholder="Ton pseudo..." style="padding:8px; border-radius:4px; border:none;"/>
+      <button id="save-score-btn" style="padding:8px 15px; background:#7eb8f7; border:none; border-radius:4px; cursor:pointer;">OK</button>
+    </div>
+    <div id="save-feedback" style="font-size:0.8rem; margin-bottom:20px;"></div>
+    
+    <div style="display:flex; gap:10px;">
+      <button id="btn-replay" style="padding:10px 20px; background:white; color:black; border:none; border-radius:4px; cursor:pointer;">Rejouer</button>
+      <button id="btn-exit" style="padding:10px 20px; background:rgba(255,255,255,0.2); color:white; border:none; border-radius:4px; cursor:pointer;">Quitter</button>
+    </div>
+  </div>
+</div>
 
   <div id="game-canvas-wrap" style="display:none;">
     <canvas id="gameCanvas" width="420" height="580"></canvas>
