@@ -1266,18 +1266,51 @@ window.saveScore = async function() {
 </script>
 
 <script>
-// --- SYSTÈME DE TOUCHES SECRÈTES ---
+// --- SYSTÈME DE TOUCHES SECRÈTES UNIVERSEL ---
 let inputSequence = "";
 const secretCode = "mdn";
 
+// 1. Pour Ordinateur et iOS (keydown classique)
 window.addEventListener("keydown", (e) => {
-  if (gameActive) return; // ne pas interférer pendant le jeu
-  inputSequence += e.key.toLowerCase();
+  if (window.gameActive) return;
+  checkCode(e.key.toLowerCase());
+});
+
+// 2. Pour Android (Gestion du clavier virtuel via champ fantôme)
+window.addEventListener("touchstart", function() {
+  if (window.gameActive) return;
+  
+  let ghostInput = document.getElementById('ghost-input');
+  if (!ghostInput) {
+    ghostInput = document.createElement('input');
+    ghostInput.id = 'ghost-input';
+    ghostInput.type = 'text';
+    ghostInput.style.position = 'absolute';
+    ghostInput.style.opacity = '0';
+    ghostInput.style.height = '0';
+    ghostInput.style.top = '-100px';
+    ghostInput.style.pointerEvents = 'none';
+    document.body.appendChild(ghostInput);
+    
+    ghostInput.addEventListener('input', (e) => {
+      const char = e.data || ghostInput.value.slice(-1);
+      if (char) checkCode(char.toLowerCase());
+      ghostInput.value = ""; 
+    });
+  }
+  ghostInput.focus(); 
+}, { passive: true });
+
+function checkCode(char) {
+  inputSequence += char;
   if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
   if (inputSequence === secretCode) {
     openGame();
+    if (document.getElementById('ghost-input')) document.getElementById('ghost-input').blur();
+    inputSequence = "";
   }
-});
+}
+
 
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
