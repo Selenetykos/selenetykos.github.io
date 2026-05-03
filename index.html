@@ -1185,6 +1185,7 @@ function trouverReponse(texte) {
     <div class="game-over-btns">
       <button class="game-btn" onclick="startGame()">Rejouer</button>
       <button class="game-btn" style="background: rgba(255,255,227,0.08); color: var(--moon); border: 1px solid rgba(255,255,227,0.2);" onclick="closeGame()">Quitter</button>
+	  <button onclick="sounds.click.play(); startGame()">Jouer</button>
     </div>
   </div>
 </div>
@@ -1266,6 +1267,19 @@ window.saveScore = async function() {
 </script>
 
 <script>
+
+// --- SYSTÈME AUDIO ---
+const sounds = {
+  theme: new Audio('theme.mp3'),
+  move: new Audio('move.mp3'),
+  click: new Audio('click.mp3'),
+  success: new Audio('success.mp3')
+};
+
+// Configuration de la musique d'ambiance
+sounds.theme.loop = true; // Pour que la musique recommence à la fin
+sounds.theme.volume = 0.5; // Volume à 50%
+	
 // --- SYSTÈME DE TOUCHES SECRÈTES UNIVERSEL ---
 let inputSequence = "";
 const secretCode = "mdn";
@@ -1298,6 +1312,8 @@ window.addEventListener('load', () => {
   }
 });
 
+	
+
 // --- COMMANDES TACTILES (Correction du bug de distance) ---
 // On l'initialise une seule fois ici, pas dans startGame
 window.addEventListener('load', () => {
@@ -1318,6 +1334,7 @@ window.addEventListener('load', () => {
       // Droite
       player.x = Math.min(canvas.width - player.w, player.x + step);
     }
+	  sounds.move.cloneNode().play();
     
     e.preventDefault();
   }, { passive: false });
@@ -1347,6 +1364,7 @@ function showScreen(name) {
 }
 
 function startGame() {
+  sounds.theme.play();	
   showScreen('play');
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
@@ -1377,6 +1395,7 @@ function movePlayer(e) {
   const step = 28;
   if (e.key === "ArrowLeft")  player.x = Math.max(0, player.x - step);
   if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + step);
+    sounds.move.cloneNode().play();
 }
 
 // --- DESSIN FUSÉE ---
