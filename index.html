@@ -1267,31 +1267,38 @@ window.saveScore = async function() {
 
 <script>
 // --- SYSTÈME DE TOUCHES SECRÈTES UNIVERSEL ---
-let secretCode = "mdn";
+let inputSequence = "";
+const secretCode = "mdn";
 
-// Création du champ de capture (invisible mais fonctionnel)
-const inputCollector = document.createElement('input');
-inputCollector.type = 'text';
-inputCollector.style.cssText = "position:fixed; top:-100px; opacity:0;";
-document.body.appendChild(inputCollector);
-
-// Sur PC : On clique n'importe où pour pouvoir taper
-// Sur Tel : Le premier toucher d'écran ouvre le clavier
-window.addEventListener("touchstart", () => { if(!window.gameActive) inputCollector.focus(); });
-window.addEventListener("click", () => { if(!window.gameActive) inputCollector.focus(); });
-
-inputCollector.addEventListener('input', (e) => {
-  // On récupère tout ce qui est tapé et on le met en minuscule
-  let val = inputCollector.value.toLowerCase();
-  
-  // Si les 3 dernières lettres sont "mdn"
-  if (val.slice(-3) === secretCode) {
+// 1. Pour l'ordinateur (clavier physique)
+window.addEventListener("keydown", (e) => {
+  if (window.gameActive) return;
+  inputSequence += e.key.toLowerCase();
+  if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
+  if (inputSequence === secretCode) {
     openGame();
-    inputCollector.value = ""; // On vide
-    inputCollector.blur();      // On range le clavier
+    inputSequence = "";
   }
 });
 
+// 2. Pour ton Android (via le chat de LIREN)
+// On attend que la page soit chargée pour trouver l'input du chat
+window.addEventListener('load', () => {
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) {
+    chatInput.addEventListener('input', () => {
+      let val = chatInput.value.toLowerCase();
+      // Si "mdn" est tapé dans la barre de recherche
+      if (val.includes(secretCode)) {
+        openGame();
+        chatInput.value = ""; // On efface le code pour que ça reste secret
+        chatInput.blur();    // On range le clavier
+      }
+    });
+  }
+});
+
+	
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
 
