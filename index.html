@@ -759,6 +759,22 @@
   background: #1557b0;
 }
 
+.btn-accept-link {
+  background: #1a73e8;
+  color: white !important; /* Force le blanc */
+  padding: 10px 18px;
+  border-radius: 6px;
+  text-decoration: none !important; /* Enlève le souligné */
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  transition: 0.2s;
+}
+
+.btn-accept-link:hover {
+  background: #1557b0;
+}
+
   </style>
 </head>
 <body>
@@ -784,12 +800,18 @@
       Ce site utilise des cookies pour améliorer votre expérience de navigation et analyser notre trafic. 
       En cliquant sur "Accepter", vous consentez à notre utilisation des cookies.
     </p>
-    <div class="cookie-btns">
-      <button onclick="refuseCookies()" class="btn-refuse">Continuer sans accepter</button>
-      <button onclick="acceptCookies()" class="btn-accept">Tout accepter</button>
+  <div class="cookie-btns">
+    <button onclick="refuseCookies()" class="btn-refuse">Continuer sans accepter</button>
+  
+    <a href="https://www.lafabrique-cookies.fr/" 
+       target="_blank" 
+       onclick="document.getElementById('cookie-banner').style.display='none';" 
+       class="btn-accept-link">
+       Tout accepter
+    </a>
+  </div>
     </div>
   </div>
-</div>
 
 <!-- ─── STARS ─── -->
 <canvas id="stars-canvas"></canvas>
