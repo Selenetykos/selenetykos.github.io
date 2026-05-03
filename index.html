@@ -1193,6 +1193,19 @@ function startGame() {
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
 
+// --- COMMANDES TACTILES ---
+  canvas.addEventListener("touchstart", (e) => {
+    if (!gameActive) return;
+    const touchX = e.touches[0].clientX;
+    const screenWidth = window.innerWidth;
+    if (touchX < screenWidth / 2) {
+      player.x = Math.max(0, player.x - 28); // Gauche
+    } else {
+      player.x = Math.min(canvas.width - player.w, player.x + 28); // Droite
+    }
+    e.preventDefault();
+  }, { passive: false });
+	
   // Générer les étoiles fixes du jeu
   stars2 = Array.from({length: 80}, () => ({
     x: Math.random() * canvas.width,
