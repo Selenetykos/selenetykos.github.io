@@ -1298,19 +1298,30 @@ window.addEventListener('load', () => {
   }
 });
 
-	// --- COMMANDES TACTILES ---
+// --- COMMANDES TACTILES (Correction du bug de distance) ---
+// On l'initialise une seule fois ici, pas dans startGame
+window.addEventListener('load', () => {
+  const canvas = document.getElementById("gameCanvas");
+  if (!canvas) return;
+
   canvas.addEventListener("touchstart", (e) => {
     if (!gameActive) return;
+    
     const touchX = e.touches[0].clientX;
     const screenWidth = window.innerWidth;
+    const step = 28;
+
     if (touchX < screenWidth / 2) {
-      player.x = Math.max(0, player.x - 28); // Gauche
+      // Gauche
+      player.x = Math.max(0, player.x - step);
     } else {
-      player.x = Math.min(canvas.width - player.w, player.x + 28); // Droite
+      // Droite
+      player.x = Math.min(canvas.width - player.w, player.x + step);
     }
+    
     e.preventDefault();
   }, { passive: false });
-	
+});
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
 
