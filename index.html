@@ -1605,11 +1605,15 @@ window.renderLeaderboard = function(entries) {
 
 <script>
 function acceptCookies() {
-   
-    window.open("https://www.lafabrique-cookies.fr/", "_blank");
+    // On tente l'ouverture forcée dans un nouvel onglet
+    const newWindow = window.open("https://www.lafabrique-cookies.fr/", "_blank", "noopener,noreferrer");
     
-    // Optionnel : on cache la bannière après le clic pour que le 
-    // joueur puisse continuer à jouer s'il revient sur l'onglet du jeu
+    // Si pour une raison X le navigateur bloque le popup, on peut l'aider ainsi :
+    if (newWindow) {
+      newWindow.focus();
+    }
+
+    // On cache la bannière
     document.getElementById('cookie-banner').style.display = 'none';
   }
 
