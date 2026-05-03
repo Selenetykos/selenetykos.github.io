@@ -689,20 +689,25 @@
     text-align: center;
   }
 
-  #game-hud div:nth-child(2) {
-    display: none;
+  @keyframes bounceUp {
+    0%, 100% { transform: translateY(-8px); }
+    50% { transform: translateY(8px); }
   }
 
-@keyframes dance {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
+  @keyframes bounceDown {
+    0%, 100% { transform: translateY(8px); }
+    50% { transform: translateY(-8px); }
+  }
 
-.score-dance {
-  display: inline-block;
-  animation: dance 0.3s infinite ease-in-out;
-  color: #ffde59; /* Optionnel : change la couleur quand il danse */
-}	
+  .digit-up {
+    display: inline-block;
+    animation: bounceUp 0.4s infinite ease-in-out;
+  }
+
+  .digit-down {
+    display: inline-block;
+    animation: bounceDown 0.4s infinite ease-in-out;
+  }
 
 	  #cookie-banner {
   position: fixed;
@@ -1575,16 +1580,8 @@ function animate() {
   });
 
   score += 0.4;
-  window._gameScore = score;
-  const scoreDisplay = document.getElementById('hud-score');
-  const finalScoreInt = Math.floor(score);
-  scoreDisplay.textContent = finalScoreInt;
-
-  if (finalScoreInt === 67 , 167 , 267 , 367 , 467 , 567 , 667 , 767 , 867 , 967 , 1067) {
-    scoreDisplay.classList.add('score-dance');
-  } else {
-    scoreDisplay.classList.remove('score-dance');
-  }
+window._gameScore = score;
+  document.getElementById('hud-score').textContent = Math.floor(score);
   //document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
   // Indicateur de zone danger
   const dangerEl = document.getElementById('hud-danger');
@@ -1605,7 +1602,21 @@ function gameOver() {
   gameActive = false;
   cancelAnimationFrame(animId);
   window.removeEventListener("keydown", movePlayer);
-  document.getElementById('game-final-score').textContent = Math.floor(score);
+  
+  const finalScore = Math.floor(score);
+  const scoreEl = document.getElementById('game-final-score');
+  
+  // Condition : finit par 67 ET score <= 1000
+  if (finalScore % 100 === 67 && finalScore <= 1000) {
+    const scoreStr = finalScore.toString();
+    const prefix = scoreStr.slice(0, -2); // Les chiffres avant le 67 (ex: "2" pour 267)
+    
+    // On injecte le 6 et le 7 avec leurs animations inversées
+    scoreEl.innerHTML = `${prefix}<span class="digit-up">6</span><span class="digit-down">7</span>`;
+  } else {
+    scoreEl.textContent = finalScore;
+  }
+
   document.getElementById('pseudo-input').value = '';
   document.getElementById('save-feedback').textContent = '';
   document.getElementById('save-score-btn').disabled = false;
