@@ -702,7 +702,62 @@
   display: inline-block;
   animation: dance 0.3s infinite ease-in-out;
   color: #ffde59; /* Optionnel : change la couleur quand il danse */
-}	  
+}	
+
+	  #cookie-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  background: #ffffff;
+  color: #1a1a1a;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  z-index: 9999;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.cookie-content p {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 15px;
+}
+
+.cookie-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cookie-btns button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+
+.btn-refuse {
+  background: transparent;
+  color: #5f6368;
+  text-decoration: underline;
+}
+
+.btn-accept {
+  background: #1a73e8; /* Bleu Google classique */
+  color: white;
+}
+
+.btn-accept:hover {
+  background: #1557b0;
+}
 
   </style>
 </head>
@@ -718,6 +773,21 @@
   <span id="hud-danger" style="display:none; font-family:'Orbitron',monospace; font-size:0.7rem; font-weight:700; letter-spacing:0.15em; animation: blink 0.6s ease-in-out infinite;"></span>
   <span class="hud-val" style="color:var(--accent); font-size:0.7rem;">← →</span>
 </div>
+  </div>
+</div>
+
+
+	<div id="cookie-banner">
+  <div class="cookie-content">
+    <p>
+      <strong>Respect de votre vie privée</strong><br>
+      Ce site utilise des cookies pour améliorer votre expérience de navigation et analyser notre trafic. 
+      En cliquant sur "Accepter", vous consentez à notre utilisation des cookies.
+    </p>
+    <div class="cookie-btns">
+      <button onclick="refuseCookies()" class="btn-refuse">Continuer sans accepter</button>
+      <button onclick="acceptCookies()" class="btn-accept">Tout accepter</button>
+    </div>
   </div>
 </div>
 
@@ -1531,6 +1601,18 @@ window.renderLeaderboard = function(entries) {
     return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
   }).join('');
 };
+</script>
+
+<script>
+  function acceptCookies() {
+    // Redirection immédiate vers le site de la Fabrique
+    window.location.href = "https://www.lafabrique-cookies.fr/";
+  }
+
+  function refuseCookies() {
+    // Cache simplement la bannière et ne fait rien d'autre
+    document.getElementById('cookie-banner').style.display = 'none';
+  }
 </script>
 	
 </body>
