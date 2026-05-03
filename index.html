@@ -693,6 +693,17 @@
     display: none;
   }
 
+@keyframes dance {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.score-dance {
+  display: inline-block;
+  animation: dance 0.3s infinite ease-in-out;
+  color: #ffde59; /* Optionnel : change la couleur quand il danse */
+}	  
+
   </style>
 </head>
 <body>
@@ -1465,7 +1476,15 @@ function animate() {
 
   score += 0.4;
   window._gameScore = score;
-  document.getElementById('hud-score').textContent = Math.floor(score);
+  const scoreDisplay = document.getElementById('hud-score');
+  const finalScoreInt = Math.floor(score);
+  scoreDisplay.textContent = finalScoreInt;
+
+  if (finalScoreInt === 67) {
+    scoreDisplay.classList.add('score-dance');
+  } else {
+    scoreDisplay.classList.remove('score-dance');
+  }
   //document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
   // Indicateur de zone danger
   const dangerEl = document.getElementById('hud-danger');
