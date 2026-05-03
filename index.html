@@ -1604,9 +1604,13 @@ window.renderLeaderboard = function(entries) {
 </script>
 
 <script>
-  function acceptCookies() {
-    // Redirection immédiate vers le site de la Fabrique
-    window.location.href = "https://www.lafabrique-cookies.fr/";
+function acceptCookies() {
+    // Ouvre le site dans un nouvel onglet
+    window.open("https://www.lafabrique-cookies.fr/", "_blank");
+    
+    // Optionnel : on cache la bannière après le clic pour que le 
+    // joueur puisse continuer à jouer s'il revient sur l'onglet du jeu
+    document.getElementById('cookie-banner').style.display = 'none';
   }
 
   function refuseCookies() {
