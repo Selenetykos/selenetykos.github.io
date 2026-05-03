@@ -1267,50 +1267,30 @@ window.saveScore = async function() {
 
 <script>
 // --- SYSTÈME DE TOUCHES SECRÈTES UNIVERSEL ---
-let inputSequence = "";
-const secretCode = "mdn";
+let secretCode = "mdn";
 
-// 1. Pour Ordinateur et iOS (keydown classique)
-window.addEventListener("keydown", (e) => {
-  if (window.gameActive) return;
-  checkCode(e.key.toLowerCase());
-});
+// Création du champ de capture (invisible mais fonctionnel)
+const inputCollector = document.createElement('input');
+inputCollector.type = 'text';
+inputCollector.style.cssText = "position:fixed; top:-100px; opacity:0;";
+document.body.appendChild(inputCollector);
 
-// 2. Pour Android (Gestion du clavier virtuel via champ fantôme)
-window.addEventListener("touchstart", function() {
-  if (window.gameActive) return;
+// Sur PC : On clique n'importe où pour pouvoir taper
+// Sur Tel : Le premier toucher d'écran ouvre le clavier
+window.addEventListener("touchstart", () => { if(!window.gameActive) inputCollector.focus(); });
+window.addEventListener("click", () => { if(!window.gameActive) inputCollector.focus(); });
+
+inputCollector.addEventListener('input', (e) => {
+  // On récupère tout ce qui est tapé et on le met en minuscule
+  let val = inputCollector.value.toLowerCase();
   
-  let ghostInput = document.getElementById('ghost-input');
-  if (!ghostInput) {
-    ghostInput = document.createElement('input');
-    ghostInput.id = 'ghost-input';
-    ghostInput.type = 'text';
-    ghostInput.style.position = 'absolute';
-    ghostInput.style.opacity = '0';
-    ghostInput.style.height = '0';
-    ghostInput.style.top = '-100px';
-    ghostInput.style.pointerEvents = 'none';
-    document.body.appendChild(ghostInput);
-    
-    ghostInput.addEventListener('input', (e) => {
-      const char = e.data || ghostInput.value.slice(-1);
-      if (char) checkCode(char.toLowerCase());
-      ghostInput.value = ""; 
-    });
-  }
-  ghostInput.focus(); 
-}, { passive: true });
-
-function checkCode(char) {
-  inputSequence += char;
-  if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
-  if (inputSequence === secretCode) {
+  // Si les 3 dernières lettres sont "mdn"
+  if (val.slice(-3) === secretCode) {
     openGame();
-    if (document.getElementById('ghost-input')) document.getElementById('ghost-input').blur();
-    inputSequence = "";
+    inputCollector.value = ""; // On vide
+    inputCollector.blur();      // On range le clavier
   }
-}
-
+});
 
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
