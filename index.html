@@ -1057,18 +1057,26 @@
 
   let defautIndex = 0;
 
-  function trouverReponse(texte) {
-    const t = texte.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    for (const item of REPONSES) {
-      if (item.mots.some(mot => t.includes(mot.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) {
-        return item.rep;
-      }
+function trouverReponse(texte) {
+  // Nettoyage du texte (minuscules et sans accents)
+  const t = texte.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  for (const item of REPONSES) {
+    // On vérifie si l'un des mots-clés est présent en tant que MOT ENTIER
+    if (item.mots.some(mot => {
+      const motNettoye = mot.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      // Cette ligne crée une règle qui cherche le mot exact entouré d'espaces ou ponctuation
+      const regex = new RegExp(`\\b${motNettoye}\\b`, 'i');
+      return regex.test(t);
+    })) {
+      return item.rep;
     }
-    const rep = REPONSE_DEFAUT[defautIndex % REPONSE_DEFAUT.length];
-    defautIndex++;
-    return rep;
   }
 
+  const rep = REPONSE_DEFAUT[defautIndex % REPONSE_DEFAUT.length];
+  defautIndex++;
+  return rep;
+}
   function sendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
