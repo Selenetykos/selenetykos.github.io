@@ -1273,7 +1273,8 @@ const sounds = {
   theme: new Audio('theme.mp3'),
   move: new Audio('move.mp3'),
   click: new Audio('click.mp3'),
-  success: new Audio('success.mp3')
+  success: new Audio('success.mp3'),
+  dead: new Audio('dead.mp3')	
 };
 
 // Configuration de la musique d'ambiance
@@ -1354,6 +1355,9 @@ function closeGame() {
   document.getElementById('game-overlay').style.display = 'none';
   showScreen('title');
   inputSequence = "";
+  sounds.theme.pause();
+  sounds.theme.currentTime = 0;	
+	
 }
 
 function showScreen(name) {
@@ -1653,6 +1657,10 @@ function gameOver() {
   gameActive = false;
   cancelAnimationFrame(animId);
   window.removeEventListener("keydown", movePlayer);
+  sounds.dead.play();		
+  sounds.theme.pause();
+  sounds.theme.currentTime = 0;	
+		
   
   const finalScore = Math.floor(score);
   const scoreEl = document.getElementById('game-final-score');
