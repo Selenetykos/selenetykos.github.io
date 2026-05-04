@@ -1719,7 +1719,7 @@ function spawnObstacle() {
     : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
 
   let vx = 0; // Par défaut : pas de mouvement horizontal
-  let vy = 0; // Par défaut : tombe vers le bas
+  let vy = 1; // Par défaut : tombe vers le bas
 
   if (score >= 5000) {
     // Mode Chaos total
