@@ -1733,22 +1733,23 @@ function animate() {
 
   drawRocket(player.x, player.y);
 
-  // RÉGLAGE DIFFICULTÉ (Fréquence d'apparition réduite à partir de 1000)
+  // RÉGLAGE FRÉQUENCE APPARITION
   let spawnRate = 0.032;
-  if (score >= 1000 && score < 5000) {
-    spawnRate = 0.028; // Réduction pour compenser le mouvement horizontal/vertical
-  } else if (score >= 5000) {
-    spawnRate = 0.06; // Zbeul
-  }
+  if (score >= 1000 && score < 5000) spawnRate = 0.028;
+  else if (score >= 5000) spawnRate = 0.06;
 
   if (Math.random() < spawnRate) {
     spawnObstacle();
     if (score > 5000 && Math.random() < 0.4) spawnObstacle();
   }
 
-  const vel = score >= 1000 
-    ? 3.5 + (score - 1000) / 250 
-    : 2.8 + score / 220;
+  // RÉGLAGE VITESSE PAR PALIERS CONSTANTS
+  let vel = 2.8; // Vitesse de base jusqu'à 1000
+  if (score >= 5000) {
+    vel = 6.5; // Zbeul total
+  } else if (score >= 1000) {
+    vel = 4.2; // Vitesse constante entre 1000 et 5000
+  }
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
@@ -1762,7 +1763,6 @@ function animate() {
     } else {
       obs.y += obs.vy * currentVel;
       obs.x += obs.vx * (currentVel * 0.5);
-      // Pour les paliers < 5000, on garde les objets dans l'écran horizontalement
       if (obs.x < 0 || obs.x + obs.size > canvas.width) obs.vx *= -1;
     }
 
@@ -1845,7 +1845,9 @@ window.renderLeaderboard = function(entries) {
     return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
   }).join('');
 };
+	
 </script>
-
+	
 </body>
+	
 </html>
