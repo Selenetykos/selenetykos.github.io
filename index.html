@@ -1336,6 +1336,13 @@ window.addEventListener('load', () => {
     <div style="font-size:2.2rem; margin-bottom:4px;">🚀</div>
     <h2>Mission Selenetykos</h2>
     <p>Pilotez la fusée · Évitez les astéroïdes</p>
+	  <button class="game-btn" onclick="openHistory()" style="background:rgba(255,255,255,0.1); margin-top:10px;">📜 Historique</button>
+
+<div id="game-history-screen" style="display:none; flex-direction:column; align-items:center;">
+    <h3>Panthéon des Pilotes</h3>
+    <div id="history-list" style="width:100%; max-height:300px; overflow-y:auto;"></div>
+    <button class="game-btn" onclick="showScreen('title')">Retour</button>
+</div>
     <p style="font-size:0.78rem;">Touches ← → pour manœuvrer</p>
 
     <div id="game-leaderboard">
@@ -1827,6 +1834,52 @@ function gameOver() {
   showScreen('over');
 }
 
+	// Fonction pour obtenir le numéro de la semaine actuelle
+function getWeekNumber(d) {
+    d = new Date(Date.now());
+    const oneJan = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil((((d.getTime() - oneJan.getTime()) / 86400000) + oneJan.getDay() + 1) / 7);
+}
+
+async function checkWeeklyReset() {
+    const currentWeek = getWeekNumber(new Date());
+    const lastReset = localStorage.getItem('last_reset_week');
+
+    // Si la semaine stockée est différente de la semaine actuelle
+    if (lastReset && lastReset != currentWeek) {
+        try {
+            // 1. Récupérer le Top 3
+            const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(3));
+            const snap = await getDocs(q);
+            const top3 = snap.docs.map(d => d.data());
+
+            if (top3.length > 0) {
+                // 2. Sauvegarder dans "archives"
+                await addDoc(collection(db, "archives"), {
+                    week: lastReset,
+                    year: new Date().getFullYear(),
+                    winners: top3,
+                    timestamp: Date.now()
+                });
+
+                // 3. Supprimer TOUS les scores pour recommencer à zéro
+                const allScores = await getDocs(collection(db, "scores"));
+                const deletePromises = allScores.docs.map(d => deleteDoc(doc(db, "scores", d.id)));
+                await Promise.all(deletePromises);
+                
+                console.log("Reset hebdomadaire effectué !");
+                window.loadLeaderboard(); // Rafraîchir l'affichage
+            }
+        } catch (e) {
+            console.error("Erreur reset:", e);
+        }
+    }
+    localStorage.setItem('last_reset_week', currentWeek);
+}
+
+// Appeler la vérification au chargement
+checkWeeklyReset();
+
 window.renderLeaderboard = function(entries) {
   const el = document.getElementById('lb-list');
   if (!el) return;
@@ -1845,6 +1898,34 @@ window.renderLeaderboard = function(entries) {
     return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
   }).join('');
 };
+
+	window.openHistory = async function() {
+    showScreen('history'); // Il faudra ajouter 'history' dans ta fonction showScreen
+    const el = document.getElementById('history-list');
+    el.innerHTML = "Chargement...";
+    
+    try {
+        const q = query(collection(db, "archives"), orderBy("timestamp", "desc"), limit(10));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            el.innerHTML = "Aucune archive pour le moment.";
+            return;
+        }
+
+        el.innerHTML = snap.docs.map(doc => {
+            const data = doc.data();
+            return `
+                <div style="border-bottom:1px solid rgba(255,255,255,0.1); padding:10px; margin-bottom:5px;">
+                    <div style="color:var(--accent); font-size:0.8rem;">Semaine ${data.week} - ${data.year}</div>
+                    ${data.winners.map((w, i) => `<div>${i+1}. ${w.name} (${Math.floor(w.score)})</div>`).join('')}
+                </div>
+            `;
+        }).join('');
+    } catch(e) {
+        el.innerHTML = "Erreur de chargement.";
+    }
+}
 	
 </script>
 	
