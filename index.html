@@ -1697,7 +1697,7 @@ function drawObstacle(obs) {
  
 // --- SPAWN OBSTACLE ---
 function spawnObstacle() {
-  const sz = 30 + Math.random() * 25;
+  const sz = 20 + Math.random() * 25;
   const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
   const color = type === 'planet'
     ? `hsl(${Math.random() * 360}, 50%, 60%)`
