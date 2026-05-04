@@ -1715,51 +1715,37 @@ function drawObstacle(obs) {
 }
 
 function spawnObstacle() {
-  const hardMode = score >= 1000;
-  const r = Math.random();
-  let type, color, sz, fast = false, zigzag = false, zigzagAmp = 0, zigzagSpeed = 0;
+  const size = 30 + Math.random() * 25;
+  const x = Math.random() * (canvas.width - size);
+  
+  // Initialisation des vitesses par défaut
+  let vx = 0;
+  let vy = 1; // Direction vers le bas par défaut
 
-  if (!hardMode) {
-    // Avant 1000 : astéroïdes normaux + planètes
-    const isPlanet = r > 0.78;
-    type = isPlanet ? 'planet' : 'asteroid';
-    sz = isPlanet ? 38 + Math.random()*22 : 20 + Math.random()*18;
-    color = isPlanet
-      ? `hsl(${Math.floor(Math.random()*360)},55%,48%)`
-      : `hsl(${200 + Math.floor(Math.random()*30)},8%,${45+Math.floor(Math.random()*20)}%)`;
-  } else {
-    // Après 1000 : nouvelles variantes
-    if (r < 0.30) {
-      // Astéroïde zigzag (orange vif)
-      type = 'asteroid';
-      sz = 18 + Math.random()*14;
-      color = `hsl(${25 + Math.floor(Math.random()*20)},90%,55%)`;
-      zigzag = true;
-      zigzagAmp = 2.5 + Math.random() * 2;
-      zigzagSpeed = 0.08 + Math.random() * 0.07;
-    } else if (r < 0.55) {
-      // Astéroïde rapide (rouge)
-      type = 'asteroid';
-      sz = 16 + Math.random()*14;
-      color = `hsl(${0 + Math.floor(Math.random()*20)},85%,50%)`;
-      fast = true;
-    } else if (r < 0.70) {
-      // Astéroïde sombre (quasi invisible)
-      type = 'asteroid';
-      sz = 22 + Math.random()*18;
-      color = `hsl(220,10%,18%)`;
-    } else if (r < 0.85) {
-      // Planète normale
-      type = 'planet';
-      sz = 36 + Math.random()*20;
-      color = `hsl(${Math.floor(Math.random()*360)},55%,48%)`;
-    } else {
-      // Astéroïde normal
-      type = 'asteroid';
-      sz = 18 + Math.random()*16;
-      color = `hsl(${200 + Math.floor(Math.random()*30)},8%,${45+Math.floor(Math.random()*20)}%)`;
-    }
+  // PHASE 3 : Après 5000 - Mouvements totalement aléatoires
+  if (score >= 5000) {
+    vx = (Math.random() - 0.5) * 2; // Direction X aléatoire
+    vy = (Math.random() - 0.5) * 2; // Direction Y aléatoire (peut même remonter !)
+  } 
+  // PHASE 2 : Après 3000 - Ajout de mouvement horizontal
+  else if (score >= 3000) {
+    vx = (Math.random() < 0.5 ? -1 : 1); // Va soit à gauche, soit à droite
   }
+
+  obstacles.push({
+    x,
+    y: -size,
+    size,
+    fast: Math.random() < 0.15,
+    zigzag: score > 500 && Math.random() < 0.3,
+    zigzagPhase: 0,
+    zigzagSpeed: 0.05 + Math.random() * 0.05,
+    zigzagAmp: 1 + Math.random() * 2,
+    // Nouvelles propriétés de direction :
+    vx: vx,
+    vy: vy
+  });
+}
 
   obstacles.push({
     x: Math.random() * (canvas.width - sz),
@@ -1820,18 +1806,49 @@ function animate() {
     : 2.8 + score / 220;
 
   obstacles.forEach((obs, i) => {
-    // Zigzag pour les astéroïdes qui en ont la propriété
-    if (obs.zigzag) {
-      obs.zigzagPhase = (obs.zigzagPhase || 0) + obs.zigzagSpeed;
-      obs.x += Math.sin(obs.zigzagPhase) * obs.zigzagAmp;
-      // Garder dans le canvas
-      obs.x = Math.max(0, Math.min(canvas.width - obs.size, obs.x));
+    // Calcul de la vitesse de base (votre logique existante)
+    const currentVel = obs.fast ? vel * 1.9 : vel;
+
+    // Gestion des déplacements
+    if (score >= 5000) {
+        // Mode Diagonale / Aléatoire
+        obs.x += obs.vx * currentVel;
+        obs.y += obs.vy * currentVel;
+
+        // Rebond sur les bords de l'écran
+        if (obs.x <= 0 || obs.x + obs.size >= canvas.width) obs.vx *= -1;
+        if (obs.y <= 0 || obs.y + obs.size >= canvas.height) obs.vy *= -1;
+    } 
+    else {
+        // Mode Standard (Vertical jusqu'à 3000, puis Horizontal ajouté)
+        obs.y += obs.vy * currentVel; // vy est 1 par défaut
+        
+        if (score >= 3000) {
+            obs.x += obs.vx * (currentVel * 0.5); // On ajoute le mouvement horizontal
+        }
+
+        // Logique zigzag existante (optionnelle, peut être cumulée)
+        if (obs.zigzag && score < 5000) {
+            obs.zigzagPhase += obs.zigzagSpeed;
+            obs.x += Math.sin(obs.zigzagPhase) * obs.zigzagAmp;
+        }
     }
-    // Les "rapides" ont leur propre vitesse
-    obs.y += obs.fast ? vel * 1.9 : vel;
+
+    // Garder l'obstacle dans les limites X (pour éviter qu'il disparaisse sur les côtés avant 5000)
+    if (score < 5000) {
+        obs.x = Math.max(0, Math.min(canvas.width - obs.size, obs.x));
+    }
 
     drawObstacle(obs);
-    if (obs.y > canvas.height + obs.size) { obstacles.splice(i, 1); return; }
+
+    // Suppression de l'obstacle s'il sort par le bas (uniquement si score < 5000)
+    // En mode chaos (5000+), les obstacles rebondissent et restent à l'écran.
+    if (score < 5000 && obs.y > canvas.height + obs.size) { 
+        obstacles.splice(i, 1); 
+        return; 
+    }
+    
+    // ... (votre reste de code : Hitbox, GameOver, etc.)
 
     // Hitbox : stricte après 1000
     const margin = hardMode ? 2 : 6;
