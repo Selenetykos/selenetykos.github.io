@@ -1,8 +1,8 @@
-name: Deploy static content to Pages
-
+name: Deploy Pages
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,10 +10,7 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps: deployment.outputs.page_url }}
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,5 +22,4 @@ jobs:
         with:
           path: '.'
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
