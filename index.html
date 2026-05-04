@@ -1394,50 +1394,66 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 
-// --- CLASSEMENT ET SAUVEGARDE ---
+// --- FONCTIONS FIREBASE ---
 window.loadLeaderboard = async function() {
   const el = document.getElementById('lb-list');
   if(!el) return;
   try {
     const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(8));
     const snap = await getDocs(q);
-    const data = snap.docs.map(d => d.data());
-    el.innerHTML = data.map((e, i) => {
-        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
-        return `<div class="lb-row">${medal} <span class="lb-name">${e.name}</span> <span class="lb-score">${Math.floor(e.score)}</span></div>`;
-    }).join('');
+    const entries = snap.docs.map(d => d.data());
+    const medals = ['🥇','🥈','🥉'];
+    const classes = ['gold','silver','bronze'];
+    el.innerHTML = entries.map((e, i) => {
+        const medal = i < 3 ? `<span class="lb-rank ${classes[i]}">${medals[i]}</span>` : `<span class="lb-rank">${i+1}</span>`;
+        return `<div class="lb-row">${medal}<span class="lb-name">${e.name}</span><span class="lb-score">${Math.floor(e.score)}</span></div>`;
+    }).join('') || '<div class="lb-empty">Aucun score</div>';
   } catch(e) { console.error(e); }
 };
 
 window.saveScore = async function() {
   const input = document.getElementById('pseudo-input');
   const feedback = document.getElementById('save-feedback');
-  const name = input.value.trim();
-  const finalScore = Math.floor(window._gameScore || 0);
-
-  if (!name) { feedback.textContent = "Pseudo vide !"; return; }
+  const btn = document.getElementById('save-score-btn');
+  const name = input.value.trim().substring(0, 16);
+  if (!name) { feedback.textContent = "Pseudo requis !"; return; }
   
+  btn.disabled = true;
   try {
-    feedback.textContent = "Envoi...";
+    const finalScore = Math.floor(window._gameScore || 0);
     const q = query(collection(db, "scores"), where("name", "==", name));
     const existing = await getDocs(q);
     let best = -1;
     existing.forEach(d => { if(d.data().score > best) best = d.data().score; });
 
     if (best !== -1 && finalScore <= best) {
-      feedback.textContent = `Ton record est de ${best} !`;
-      return;
+      feedback.textContent = `Record actuel : ${best}`;
+      btn.disabled = false; return;
     }
-
     for (const d of existing.docs) { await deleteDoc(doc(db, "scores", d.id)); }
     await addDoc(collection(db, "scores"), { name, score: finalScore, date: Date.now() });
-    
-    feedback.textContent = "✓ Score enregistré !";
+    feedback.textContent = "✓ Record sauvegardé !";
     window.loadLeaderboard();
-  } catch(e) { feedback.textContent = "Erreur Firebase"; }
+  } catch(e) { btn.disabled = false; }
 };
 
-// --- RESET HEBDO ---
+window.openHistory = async function() {
+    showScreen('history');
+    const el = document.getElementById('history-list');
+    el.innerHTML = "Chargement...";
+    try {
+        const q = query(collection(db, "archives"), orderBy("timestamp", "desc"), limit(10));
+        const snap = await getDocs(q);
+        el.innerHTML = snap.docs.map(doc => {
+            const data = doc.data();
+            return `<div style="border-bottom:1px solid rgba(255,255,255,0.1); padding:10px; margin-bottom:10px;">
+                <div style="color:var(--accent); font-size:0.7rem;">SEMAINE ${data.week} - ${data.year}</div>
+                ${data.winners.map((w, i) => `<div style="font-size:0.85rem;">${i+1}. ${w.name} (${Math.floor(w.score)})</div>`).join('')}
+            </div>`;
+        }).join('') || "Le Panthéon est vide.";
+    } catch(e) { el.innerHTML = "Erreur de chargement."; }
+};
+
 async function checkWeeklyReset() {
     const d = new Date();
     const oneJan = new Date(d.getFullYear(), 0, 1);
@@ -1445,158 +1461,166 @@ async function checkWeeklyReset() {
     const lastReset = localStorage.getItem('last_reset_week');
 
     if (lastReset && lastReset != currentWeek) {
-        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(3));
-        const snap = await getDocs(q);
-        const top3 = snap.docs.map(d => d.data());
-        if (top3.length > 0) {
-            await addDoc(collection(db, "archives"), { week: lastReset, winners: top3, timestamp: Date.now() });
-            const all = await getDocs(collection(db, "scores"));
-            for (const s of all.docs) { await deleteDoc(doc(db, "scores", s.id)); }
-        }
+        try {
+            const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(3));
+            const snap = await getDocs(q);
+            const top3 = snap.docs.map(d => d.data());
+            if (top3.length > 0) {
+                await addDoc(collection(db, "archives"), { week: lastReset, year: new Date().getFullYear(), winners: top3, timestamp: Date.now() });
+                const all = await getDocs(collection(db, "scores"));
+                for (const s of all.docs) { await deleteDoc(doc(db, "scores", s.id)); }
+                window.loadLeaderboard();
+            }
+        } catch (e) { console.error(e); }
     }
     localStorage.setItem('last_reset_week', currentWeek);
 }
-
-window.openHistory = async function() {
-    showScreen('history');
-    const el = document.getElementById('history-list');
-    el.innerHTML = "Chargement...";
-    const q = query(collection(db, "archives"), orderBy("timestamp", "desc"), limit(10));
-    const snap = await getDocs(q);
-    el.innerHTML = snap.docs.map(doc => {
-        const d = doc.data();
-        return `<div style="border-bottom:1px solid #333; padding:10px;">
-            <div style="color:cyan">Semaine ${d.week}</div>
-            ${d.winners.map(w => `<div>${w.name}: ${Math.floor(w.score)}</div>`).join('')}
-        </div>`;
-    }).join('') || "Aucune archive.";
-};
 
 checkWeeklyReset();
 window.loadLeaderboard();
 </script>
 
 <script>
-// --- CORE DU JEU ---
+// --- MOTEUR GRAPHIQUE ET JEU ---
 const sounds = {
   theme: new Audio('theme.mp3'),
-  dead: new Audio('dead.mp3')
+  dead: new Audio('dead.mp3'),
+  success: new Audio('success.mp3')
 };
 sounds.theme.loop = true;
 
-let canvas, ctx, player, obstacles, stars, score, gameActive, animId;
-const keys = {};
+let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
+let bgGradient, rocketBodyGrad, rocketTipGrad;
+const keysPressed = {};
 
-window.addEventListener("keydown", (e) => keys[e.key] = true);
-window.addEventListener("keyup", (e) => keys[e.key] = false);
+window.addEventListener("keydown", (e) => { if (gameActive) keysPressed[e.key] = true; });
+window.addEventListener("keyup", (e) => { keysPressed[e.key] = false; });
 
 function showScreen(name) {
   document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
   document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
   document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
   document.getElementById('game-history-screen').style.display = name === 'history' ? 'flex' : 'none';
-  document.getElementById('game-hud').style.display = name === 'play' || name === 'over' ? 'flex' : 'none';
+  document.getElementById('game-hud').style.display = (name === 'play' || name === 'over') ? 'flex' : 'none';
 }
 
 function startGame() {
-  score = 0;
-  obstacles = [];
-  gameActive = true;
-  player = { x: 195, y: 480, w: 30, h: 50 };
+  score = 0; obstacles = []; gameActive = true;
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
-  stars = Array.from({length: 80}, () => ({x: Math.random()*420, y: Math.random()*580, r: Math.random()*1.5, s: Math.random()*2+1}));
   
-  sounds.dead.pause(); 
-  sounds.dead.currentTime = 0;
-  sounds.theme.currentTime = 0;
-  sounds.theme.play();
-  
+  // Gradients originaux
+  bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bgGradient.addColorStop(0, "#02020f"); bgGradient.addColorStop(1, "#060618");
+  rocketBodyGrad = ctx.createLinearGradient(0, 0, 16, 0);
+  rocketBodyGrad.addColorStop(0, "#c8ccd8"); rocketBodyGrad.addColorStop(0.5, "#f0f2f7"); rocketBodyGrad.addColorStop(1, "#9aa0b0");
+  rocketTipGrad = ctx.createLinearGradient(0, 0, 16, 0);
+  rocketTipGrad.addColorStop(0, "#a78bfa"); rocketTipGrad.addColorStop(1, "#7eb8f7");
+
+  stars2 = Array.from({length: 80}, () => ({
+    x: Math.random() * 420, y: Math.random() * 580,
+    r: Math.random() * 1.3 + 0.2, speed: Math.random() * 1.5 + 0.5
+  }));
+
+  player = { x: 195, y: 480, w: 30, h: 50 };
+  sounds.dead.pause(); sounds.dead.currentTime = 0;
+  sounds.theme.currentTime = 0; sounds.theme.play();
   showScreen('play');
   animate();
 }
 
+function drawRocket(x, y) {
+  const cx = x + 15;
+  const flameH = 12 + Math.random() * 10;
+  const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
+  grad.addColorStop(0, "rgba(255,200,50,0.95)"); grad.addColorStop(1, "rgba(255,50,0,0)");
+  ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(x + 8, y + 50); ctx.lineTo(x + 22, y + 50); ctx.lineTo(cx, y + 50 + flameH); ctx.fill();
+  
+  ctx.fillStyle = rocketBodyGrad; ctx.beginPath(); ctx.roundRect(x + 7, y + 12, 16, 38, 2); ctx.fill();
+  
+  ctx.fillStyle = "#7eb8f7"; // Ailerons
+  ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.fill();
+  
+  ctx.fillStyle = rocketTipGrad; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x + 7, y + 12); ctx.lineTo(x + 23, y + 12); ctx.fill();
+  
+  ctx.fillStyle = "#00d4ff"; ctx.shadowColor = "#00d4ff"; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.arc(cx, y + 22, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+}
+
+function drawObstacle(obs) {
+  ctx.save(); ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  const r = obs.size/2;
+  if (obs.type === 'planet') {
+    ctx.fillStyle = obs.color; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    if (obs.hasRing) {
+      ctx.strokeStyle = obs.color; ctx.globalAlpha = 0.4; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, 0, r*1.7, r*0.35, 0.3, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.beginPath(); ctx.arc(-r*0.3, -r*0.3, r*0.4, 0, Math.PI*2); ctx.fill();
+  } else {
+    ctx.fillStyle = obs.color; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.arc(-r*0.2, -r*0.2, r*0.2, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
 function animate() {
   if (!gameActive) return;
-  ctx.fillStyle = "#02020f";
-  ctx.fillRect(0, 0, 420, 580);
+  ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, 420, 580);
 
-  // Etoiles
-  stars.forEach(s => {
-    s.y += s.s; if(s.y > 580) s.y = 0;
-    ctx.fillStyle = "white"; ctx.fillRect(s.x, s.y, s.r, s.r);
+  stars2.forEach(s => {
+    s.y += s.speed * (1 + score / 2000); if (s.y > 580) s.y = 0;
+    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
   });
 
-  // Joueur
-  if (keys["ArrowLeft"]) player.x = Math.max(0, player.x - 6);
-  if (keys["ArrowRight"]) player.x = Math.min(390, player.x + 6);
-  
-  // Dessin Fusée
-  ctx.fillStyle = "#f0f2f7"; ctx.fillRect(player.x+7, player.y+12, 16, 38);
-  ctx.fillStyle = "#a78bfa"; ctx.beginPath(); ctx.moveTo(player.x+15, player.y); ctx.lineTo(player.x+7, player.y+12); ctx.lineTo(player.x+23, player.y+12); ctx.fill();
-  ctx.fillStyle = "orange"; ctx.fillRect(player.x+10, player.y+50, 10, 5+Math.random()*10);
+  if (keysPressed["ArrowLeft"]) player.x = Math.max(0, player.x - 6);
+  if (keysPressed["ArrowRight"]) player.x = Math.min(390, player.x + 6);
+  drawRocket(player.x, player.y);
 
-  // Obstacles
-  let difficulty = score >= 5000 ? 8 : (score >= 1000 ? 5 : 3.5);
-  if (Math.random() < 0.04) {
+  let vel = score >= 5000 ? 6.5 : (score >= 1000 ? 4.2 : 2.8);
+  if (Math.random() < (score > 5000 ? 0.06 : 0.035)) {
+    const sz = 20 + Math.random() * 25;
     obstacles.push({
-        x: Math.random()*420, y: -30, 
-        r: 12+Math.random()*18, 
-        color: `hsl(${Math.random()*360}, 50%, 50%)`,
-        type: Math.random() > 0.8 ? 'planet' : 'ast',
-        ring: Math.random() > 0.5
+      x: Math.random()*(420-sz), y: -sz, size: sz,
+      color: `hsl(${Math.random()*360}, ${Math.random()>0.8?80:30}%, 50%)`,
+      type: Math.random()>0.8 ? 'planet' : 'ast',
+      hasRing: Math.random()>0.5, vy: 1
     });
   }
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
-    let o = obstacles[i];
-    o.y += difficulty;
-    
-    // Dessin
-    ctx.fillStyle = o.color; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
-    if(o.type === 'planet' && o.ring) {
-        ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.beginPath(); 
-        ctx.ellipse(o.x, o.y, o.r*1.8, o.r*0.5, 0.4, 0, Math.PI*2); ctx.stroke();
-    }
-
-    // Collision
-    let dx = (player.x + 15) - o.x;
-    let dy = (player.y + 25) - o.y;
-    if (Math.sqrt(dx*dx + dy*dy) < o.r + 12) {
-      gameActive = false;
-      sounds.theme.pause();
-      sounds.dead.play();
-      document.getElementById('game-final-score').textContent = Math.floor(score);
+    let o = obstacles[i]; o.y += vel;
+    drawObstacle(o);
+    if (player.x < o.x + o.size - 5 && player.x + 30 > o.x + 5 && player.y < o.y + o.size - 5 && player.y + 50 > o.y + 5) {
+      gameActive = false; sounds.theme.pause(); sounds.dead.play();
       window._gameScore = score;
+      document.getElementById('game-final-score').textContent = Math.floor(score);
       showScreen('over');
     }
     if (o.y > 600) obstacles.splice(i, 1);
   }
 
-  score += 0.5;
+  score += 0.6;
   document.getElementById('hud-score').textContent = Math.floor(score);
+  
+  const danger = document.getElementById('hud-danger');
+  if (score >= 1000) {
+      danger.style.display = 'block';
+      danger.textContent = score >= 5000 ? '⚠️ CHAOS TOTAL' : '⚠️ DANGER';
+      danger.style.color = score >= 5000 ? '#ef4444' : '#fbbf24';
+  } else danger.style.display = 'none';
+
   animId = requestAnimationFrame(animate);
 }
 
-function closeGame() {
-  gameActive = false;
-  sounds.theme.pause();
-  document.getElementById('game-overlay').style.display = 'none';
-}
+function closeGame() { gameActive = false; sounds.theme.pause(); document.getElementById('game-overlay').style.display = 'none'; }
+function openGame() { document.getElementById('game-overlay').style.display = 'flex'; showScreen('title'); }
 
-function openGame() {
-    document.getElementById('game-overlay').style.display = 'flex';
-    showScreen('title');
-}
-
-// Code secret mdn
 let seq = "";
 window.addEventListener("keydown", (e) => {
-    seq += e.key.toLowerCase();
-    if (seq.endsWith("mdn")) openGame();
+    seq += e.key.toLowerCase(); if (seq.endsWith("mdn")) openGame();
 });
-</script>
-	
 </script>
 	
 </body>
