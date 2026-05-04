@@ -1352,8 +1352,7 @@ window.addEventListener('load', () => {
   <div id="game-history-screen" style="display:none; flex-direction:column; align-items:center; width:100%; height:100%; padding:20px; box-sizing:border-box;">
     <div style="font-size:2rem; margin-bottom:10px;">🏛️</div>
     <h3 style="margin-bottom:20px;">Panthéon des Pilotes</h3>
-    <div id="history-list" style="width:100%; flex-grow:1; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px;">
-      </div>
+    <div id="history-list" style="width:100%; flex-grow:1; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px;"></div>
     <button class="game-btn" onclick="showScreen('title')" style="margin-top:20px; width:auto; padding:10px 40px;">Retour</button>
   </div>
 
@@ -1381,8 +1380,7 @@ window.addEventListener('load', () => {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
@@ -1396,23 +1394,52 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 const SCORES_COL = "scores";
-const LB_MAX = 8;
+const ARCHIVES_COL = "archives";
 
-window._fbReady = true;
+// --- RESET HEBDOMADAIRE ---
+function getWeekNumber(d) {
+    const date = new Date(d.getTime());
+    const oneJan = new Date(date.getFullYear(), 0, 1);
+    return Math.ceil((((date.getTime() - oneJan.getTime()) / 86400000) + oneJan.getDay() + 1) / 7);
+}
+
+async function checkWeeklyReset() {
+    const currentWeek = getWeekNumber(new Date());
+    const lastReset = localStorage.getItem('last_reset_week');
+
+    if (lastReset !== null && lastReset != currentWeek) {
+        try {
+            const q = query(collection(db, SCORES_COL), orderBy("score", "desc"), limit(3));
+            const snap = await getDocs(q);
+            const top3 = snap.docs.map(d => d.data());
+
+            if (top3.length > 0) {
+                await addDoc(collection(db, ARCHIVES_COL), {
+                    week: lastReset,
+                    year: new Date().getFullYear(),
+                    winners: top3,
+                    timestamp: Date.now()
+                });
+                const allScores = await getDocs(collection(db, SCORES_COL));
+                const deletePromises = allScores.docs.map(d => deleteDoc(doc(db, SCORES_COL, d.id)));
+                await Promise.all(deletePromises);
+                window.loadLeaderboard();
+            }
+        } catch (e) { console.error("Reset Error:", e); }
+    }
+    localStorage.setItem('last_reset_week', currentWeek);
+}
 
 window.loadLeaderboard = async function() {
   const el = document.getElementById('lb-list');
   if (!el) return;
   el.innerHTML = '<div class="lb-loading">Chargement…</div>';
   try {
-    const q = query(collection(db, SCORES_COL), orderBy("score", "desc"), limit(LB_MAX));
+    const q = query(collection(db, SCORES_COL), orderBy("score", "desc"), limit(8));
     const snap = await getDocs(q);
     const entries = snap.docs.map(d => d.data());
     window.renderLeaderboard(entries);
-  } catch(e) {
-    el.innerHTML = '<div class="lb-empty">Impossible de charger les scores.</div>';
-    console.error(e);
-  }
+  } catch(e) { el.innerHTML = 'Erreur leaderboard'; }
 };
 
 window.saveScore = async function() {
@@ -1420,66 +1447,47 @@ window.saveScore = async function() {
   const btn = document.getElementById('save-score-btn');
   const feedback = document.getElementById('save-feedback');
   const name = nameInput.value.trim().substring(0, 16);
-
-  if (!name) {
-    feedback.textContent = "Entre ton pseudo d'abord !";
-    feedback.style.color = "#f87171";
-    return;
-  }
-
+  if (!name) { feedback.textContent = "Pseudo requis !"; return; }
   btn.disabled = true;
-  feedback.textContent = 'Vérification...';
-  feedback.style.color = 'var(--accent)';
 
   try {
     const finalScore = Math.floor(window._gameScore || 0);
     const q = query(collection(db, SCORES_COL), where("name", "==", name));
     const existing = await getDocs(q);
-
     let bestPrev = -1;
-    let existingDocId = null;
-
-    existing.forEach(d => {
-      if (d.data().score > bestPrev) {
-        bestPrev = d.data().score;
-        existingDocId = d.id;
-      }
-    });
+    existing.forEach(d => { if (d.data().score > bestPrev) bestPrev = d.data().score; });
 
     if (bestPrev !== -1 && finalScore <= bestPrev) {
-      feedback.textContent = `🌙 Record : ${bestPrev}. Fais mieux !`;
-      feedback.style.color = '#fbbf24';
-      btn.disabled = false;
-      return;
+      feedback.textContent = `🌙 Record : ${bestPrev}.`;
+      btn.disabled = false; return;
     }
-
-    feedback.textContent = 'Enregistrement...';
     if (window.sounds && window.sounds.success) window.sounds.success.play();
-
-    if (existingDocId) {
-      for (const d of existing.docs) {
-        await deleteDoc(doc(db, SCORES_COL, d.id));
-      }
-    }
-
-    await addDoc(collection(db, SCORES_COL), {
-      name: name,
-      score: finalScore,
-      date: Date.now()
-    });
-
+    for (const d of existing.docs) { await deleteDoc(doc(db, SCORES_COL, d.id)); }
+    await addDoc(collection(db, SCORES_COL), { name, score: finalScore, date: Date.now() });
     feedback.textContent = '✓ Record pulvérisé !';
-    feedback.style.color = '#4ade80';
-    nameInput.value = '';
     window.loadLeaderboard();
-
-  } catch(e) {
-    feedback.textContent = 'Erreur de connexion.';
-    feedback.style.color = '#f87171';
-    btn.disabled = false;
-    console.error(e);
-  }
+  } catch(e) { btn.disabled = false; }
 };
+
+window.openHistory = async function() {
+    showScreen('history');
+    const el = document.getElementById('history-list');
+    el.innerHTML = "Chargement...";
+    try {
+        const q = query(collection(db, ARCHIVES_COL), orderBy("timestamp", "desc"), limit(10));
+        const snap = await getDocs(q);
+        if (snap.empty) { el.innerHTML = "Aucune archive."; return; }
+        el.innerHTML = snap.docs.map(doc => {
+            const data = doc.data();
+            return `<div style="border-bottom:1px solid rgba(255,255,255,0.1); padding:10px; margin-bottom:5px;">
+                <div style="color:var(--accent); font-size:0.8rem;">Semaine ${data.week} - ${data.year}</div>
+                ${data.winners.map((w, i) => `<div>${i+1}. ${w.name} (${Math.floor(w.score)})</div>`).join('')}
+            </div>`;
+        }).join('');
+    } catch(e) { el.innerHTML = "Erreur."; }
+};
+
+checkWeeklyReset();
 </script>
 
 <script>
@@ -1492,61 +1500,20 @@ const sounds = {
 sounds.theme.loop = true;
 sounds.theme.volume = 0.5;
 
-let inputSequence = "";
-const secretCode = "mdn";
-
-window.addEventListener("keydown", (e) => {
-  if (window.gameActive) return;
-  inputSequence += e.key.toLowerCase();
-  if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
-  if (inputSequence === secretCode) {
-    openGame();
-    inputSequence = "";
-  }
-});
-
-window.addEventListener('load', () => {
-  const chatInput = document.getElementById('chat-input');
-  if (chatInput) {
-    chatInput.addEventListener('input', () => {
-      let val = chatInput.value.toLowerCase();
-      if (val.includes(secretCode)) {
-        openGame();
-        chatInput.value = "";
-        chatInput.blur();
-      }
-    });
-  }
-});
-
-window.addEventListener('load', () => {
-  const canvas = document.getElementById("gameCanvas");
-  if (!canvas) return;
-  canvas.addEventListener("touchstart", (e) => {
-    if (!gameActive) return;
-    const touchX = e.touches[0].clientX;
-    const screenWidth = window.innerWidth;
-    if (touchX < screenWidth / 2) {
-      player.x = Math.max(0, player.x - 28);
-    } else {
-      player.x = Math.min(canvas.width - player.w, player.x + 28);
-    }
-    e.preventDefault();
-  }, { passive: false });
-});
-
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
-let bgGradient = null;
-let rocketBodyGrad = null;
-let rocketTipGrad = null;
+let bgGradient, rocketBodyGrad, rocketTipGrad;
 const keysPressed = {};
 
-window.addEventListener("keydown", (e) => {
-  if (gameActive) keysPressed[e.key] = true;
-});
-window.addEventListener("keyup", (e) => {
-  keysPressed[e.key] = false;
-});
+window.addEventListener("keydown", (e) => { if (gameActive) keysPressed[e.key] = true; });
+window.addEventListener("keyup", (e) => { keysPressed[e.key] = false; });
+
+function showScreen(name) {
+  document.getElementById('game-title-screen').style.display   = name === 'title'   ? 'flex' : 'none';
+  document.getElementById('game-canvas-wrap').style.display    = name === 'play'    ? 'flex' : 'none';
+  document.getElementById('game-over-screen').style.display    = name === 'over'    ? 'flex' : 'none';
+  document.getElementById('game-hud').style.display            = name === 'play'    ? 'flex' : 'none';
+  document.getElementById('game-history-screen').style.display = name === 'history' ? 'flex' : 'none';
+}
 
 function openGame() {
   document.getElementById('game-overlay').style.display = 'flex';
@@ -1555,55 +1522,33 @@ function openGame() {
 }
 
 function closeGame() {
-  gameActive = false;
-  cancelAnimationFrame(animId);
+  gameActive = false; cancelAnimationFrame(animId);
   document.getElementById('game-overlay').style.display = 'none';
-  showScreen('title');
-  inputSequence = "";
-  sounds.theme.pause();
-  sounds.theme.currentTime = 0;
+  sounds.theme.pause(); sounds.theme.currentTime = 0;
 }
 
-function showScreen(name) {
-  document.getElementById('game-title-screen').style.display   = name === 'title'   ? 'flex' : 'none';
-  document.getElementById('game-canvas-wrap').style.display    = name === 'play'    ? 'flex' : 'none';
-  document.getElementById('game-over-screen').style.display    = name === 'over'    ? 'flex' : 'none';
-  document.getElementById('game-hud').style.display            = name === 'play'    ? 'flex' : 'none';
-  // AJOUTE CETTE LIGNE :
-  document.getElementById('game-history-screen').style.display = name === 'history' ? 'flex' : 'none';
-}
 function startGame() {
   sounds.theme.play();
   showScreen('play');
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
-
+  
   bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  bgGradient.addColorStop(0, "#02020f");
-  bgGradient.addColorStop(1, "#060618");
-
+  bgGradient.addColorStop(0, "#02020f"); bgGradient.addColorStop(1, "#060618");
+  
   rocketBodyGrad = ctx.createLinearGradient(0, 0, 16, 0);
-  rocketBodyGrad.addColorStop(0, "#c8ccd8");
-  rocketBodyGrad.addColorStop(0.5, "#f0f2f7");
-  rocketBodyGrad.addColorStop(1, "#9aa0b0");
-
+  rocketBodyGrad.addColorStop(0, "#c8ccd8"); rocketBodyGrad.addColorStop(0.5, "#f0f2f7"); rocketBodyGrad.addColorStop(1, "#9aa0b0");
+  
   rocketTipGrad = ctx.createLinearGradient(0, 0, 16, 0);
-  rocketTipGrad.addColorStop(0, "#a78bfa");
-  rocketTipGrad.addColorStop(1, "#7eb8f7");
+  rocketTipGrad.addColorStop(0, "#a78bfa"); rocketTipGrad.addColorStop(1, "#7eb8f7");
 
   stars2 = Array.from({length: 80}, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 1.3 + 0.2,
-    speed: Math.random() * 1.5 + 0.5,
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    r: Math.random() * 1.3 + 0.2, speed: Math.random() * 1.5 + 0.5
   }));
 
   player = { x: canvas.width / 2 - 15, y: canvas.height - 90, w: 30, h: 50 };
-  obstacles = [];
-  score = 0;
-  gameActive = true;
-
-  cancelAnimationFrame(animId);
+  obstacles = []; score = 0; gameActive = true;
   animate();
 }
 
@@ -1611,326 +1556,79 @@ function drawRocket(x, y) {
   const cx = x + 15;
   const flameH = 12 + Math.random() * 10;
   const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
-  grad.addColorStop(0, "rgba(255,200,50,0.95)");
-  grad.addColorStop(0.5, "rgba(255,90,10,0.7)");
-  grad.addColorStop(1, "rgba(255,50,0,0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.moveTo(x + 8, y + 50);
-  ctx.lineTo(x + 22, y + 50);
-  ctx.lineTo(cx, y + 50 + flameH);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = rocketBodyGrad;
-  ctx.beginPath();
-  ctx.roundRect(x + 7, y + 12, 16, 38, 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#7eb8f7";
-  ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.closePath(); ctx.fill();
-
-  ctx.fillStyle = rocketTipGrad;
-  ctx.beginPath();
-  ctx.moveTo(cx, y);
-  ctx.lineTo(x + 7, y + 12);
-  ctx.lineTo(x + 23, y + 12);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "#00d4ff";
-  ctx.shadowColor = "#00d4ff";
-  ctx.shadowBlur = 6;
-  ctx.beginPath();
-  ctx.arc(cx, y + 22, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
+  grad.addColorStop(0, "rgba(255,200,50,0.95)"); grad.addColorStop(1, "rgba(255,50,0,0)");
+  ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(x + 8, y + 50); ctx.lineTo(x + 22, y + 50); ctx.lineTo(cx, y + 50 + flameH); ctx.fill();
+  ctx.fillStyle = rocketBodyGrad; ctx.beginPath(); ctx.roundRect(x + 7, y + 12, 16, 38, 2); ctx.fill();
+  ctx.fillStyle = "#7eb8f7"; ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.fill();
+  ctx.fillStyle = rocketTipGrad; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x+7, y+12); ctx.lineTo(x+23, y+12); ctx.fill();
 }
 
 function drawObstacle(obs) {
-  ctx.save();
-  ctx.translate(obs.x + obs.size / 2, obs.y + obs.size / 2);
-  const r = obs.size / 2;
-
-  if (obs.type === 'planet') {
-    ctx.fillStyle = obs.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    if (obs.hasRing) {
-      ctx.strokeStyle = obs.color;
-      ctx.globalAlpha = 0.45;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.7, r * 0.35, 0.3, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.beginPath();
-    ctx.arc(-r * 0.3, -r * 0.3, r * 0.4, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.fillStyle = obs.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.beginPath(); ctx.arc(-r*0.3, -r*0.25, r*0.22, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(r*0.25, r*0.2, r*0.14, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.12)";
-    ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, r*0.18, 0, Math.PI*2); ctx.fill();
+  ctx.save(); ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  const r = obs.size/2;
+  ctx.fillStyle = obs.color; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+  if (obs.type === 'planet' && obs.hasRing) {
+    ctx.strokeStyle = obs.color; ctx.globalAlpha = 0.4; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, 0, r*1.7, r*0.35, 0.3, 0, Math.PI*2); ctx.stroke();
   }
   ctx.restore();
 }
 
-function spawnObstacle() {
-  const sz = 20 + Math.random() * 25;
-  const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
-  const color = type === 'planet'
-    ? `hsl(${Math.random() * 360}, 50%, 60%)`
-    : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
-
-  let vx = 0;
-  let vy = 1;
-
-  if (score >= 5000) {
-    vx = (Math.random() - 0.5) * 4;
-    vy = (Math.random() - 0.5) * 4;
-    if (Math.abs(vy) < 0.5) vy = vy < 0 ? -0.5 : 0.5;
-  } else if (score >= 3000) {
-    vx = Math.random() < 0.3 ? (Math.random() - 0.5) * 2.5 : 0;
-    vy = Math.random() < 0.2 ? (Math.random() - 0.5) * 2 : 1;
-  } else if (score >= 1000) {
-    vx = Math.random() < 0.3 ? (Math.random() - 0.5) * 2 : 0;
-    vy = 1;
-  }
-
-  obstacles.push({
-    x: Math.random() * (canvas.width - sz),
-    y: score >= 5000 ? Math.random() * canvas.height : -sz - 10,
-    size: sz,
-    type,
-    color,
-    vx,
-    vy,
-    fast: Math.random() < 0.15,
-    hasRing: type === 'planet' && Math.random() > 0.55
-  });
-}
-
 function animate() {
   if (!gameActive) return;
+  ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = bgGradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const starSpeed = 1.5 + score / 300;
-  for (let i = 0; i < stars2.length; i++) {
-    const s = stars2[i];
-    s.y += s.speed * (starSpeed / 1.5);
+  stars2.forEach(s => {
+    s.y += s.speed * (1 + score / 1000);
     if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
-    ctx.globalAlpha = 0.6 + Math.random() * 0.4;
-    ctx.fillStyle = "#fff8e0";
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
+    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+  });
 
-  const playerSpeed = 5;
-  if (keysPressed["ArrowLeft"])  player.x = Math.max(0, player.x - playerSpeed);
-  if (keysPressed["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + playerSpeed);
-
+  if (keysPressed["ArrowLeft"]) player.x = Math.max(0, player.x - 5);
+  if (keysPressed["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + 5);
   drawRocket(player.x, player.y);
 
-  // RÉGLAGE FRÉQUENCE APPARITION
-  let spawnRate = 0.032;
-  if (score >= 1000 && score < 5000) spawnRate = 0.028;
-  else if (score >= 5000) spawnRate = 0.06;
-
+  let spawnRate = score > 5000 ? 0.06 : 0.032;
   if (Math.random() < spawnRate) {
-    spawnObstacle();
-    if (score > 5000 && Math.random() < 0.4) spawnObstacle();
+    const sz = 20 + Math.random() * 25;
+    obstacles.push({
+      x: Math.random() * (canvas.width - sz), y: -sz, size: sz,
+      type: Math.random() > 0.8 ? 'planet' : 'asteroid',
+      color: `hsl(${Math.random() * 360}, 30%, 50%)`,
+      hasRing: Math.random() > 0.5, vy: 1 + (score / 1500)
+    });
   }
 
-  // RÉGLAGE VITESSE PAR PALIERS CONSTANTS
-  let vel = 2.8; // Vitesse de base jusqu'à 1000
-  if (score >= 5000) {
-    vel = 6.5; // Zbeul total
-  } else if (score >= 1000) {
-    vel = 4.2; // Vitesse constante entre 1000 et 5000
-  }
-
+  let vel = score >= 5000 ? 6.5 : (score >= 1000 ? 4.2 : 2.8);
   for (let i = obstacles.length - 1; i >= 0; i--) {
-    const obs = obstacles[i];
-    const currentVel = obs.fast ? vel * 1.8 : vel;
-
-    if (score >= 5000) {
-      obs.x += obs.vx * currentVel;
-      obs.y += obs.vy * currentVel;
-      if (obs.x <= 0 || obs.x + obs.size >= canvas.width)  obs.vx *= -1;
-      if (obs.y <= 0 || obs.y + obs.size >= canvas.height) obs.vy *= -1;
-    } else {
-      obs.y += obs.vy * currentVel;
-      obs.x += obs.vx * (currentVel * 0.5);
-      if (obs.x < 0 || obs.x + obs.size > canvas.width) obs.vx *= -1;
-    }
-
-    if (score < 5000 && obs.y > canvas.height + obs.size) {
-      obstacles.splice(i, 1);
-      continue;
-    }
-
+    const obs = obstacles[i]; obs.y += vel * obs.vy;
     drawObstacle(obs);
-
-    const margin = score >= 2000 ? 2 : 5;
-    if (
-      player.x + margin < obs.x + obs.size - margin &&
-      player.x + player.w - margin > obs.x + margin &&
-      player.y + margin < obs.y + obs.size - margin &&
-      player.y + player.h - margin > obs.y + margin
-    ) {
-      gameOver();
-      return;
+    if (obs.y > canvas.height) obstacles.splice(i, 1);
+    if (player.x < obs.x + obs.size && player.x + player.w > obs.x && player.y < obs.y + obs.size && player.y + player.h > obs.y) {
+      gameActive = false; sounds.dead.play(); showScreen('over');
+      document.getElementById('game-final-score').textContent = Math.floor(score);
     }
   }
 
   score += 0.6;
-  window._gameScore = score;
   document.getElementById('hud-score').textContent = Math.floor(score);
-
-  const dangerEl = document.getElementById('hud-danger');
-  if (dangerEl) {
-    if (score >= 1000) {
-      dangerEl.style.display = 'block';
-      dangerEl.textContent   = score >= 5000 ? '⚠️ CHAOS TOTAL' : (score >= 3000 ? '⚠️ TURBULENCES' : '⚠️ DANGER');
-      dangerEl.style.color   = score >= 5000 ? '#ef4444' : (score >= 3000 ? '#f87171' : '#fbbf24');
-    } else {
-      dangerEl.style.display = 'none';
-    }
-  }
-
   animId = requestAnimationFrame(animate);
 }
-
-function gameOver() {
-  gameActive = false;
-  cancelAnimationFrame(animId);
-  sounds.dead.play();
-  sounds.theme.pause();
-  sounds.theme.currentTime = 0;
-
-  const finalScore = Math.floor(score);
-  const scoreEl = document.getElementById('game-final-score');
-
-  if (finalScore % 100 === 67 && finalScore <= 1000) {
-    const scoreStr = finalScore.toString();
-    const prefix = scoreStr.slice(0, -2);
-    scoreEl.innerHTML = `${prefix}<span class="digit-up">6</span><span class="digit-down">7</span>`;
-  } else {
-    scoreEl.textContent = finalScore;
-  }
-
-  document.getElementById('pseudo-input').value = '';
-  document.getElementById('save-feedback').textContent = '';
-  document.getElementById('save-score-btn').disabled = false;
-  showScreen('over');
-}
-
-	// Fonction pour obtenir le numéro de la semaine actuelle
-function getWeekNumber(d) {
-    d = new Date(Date.now());
-    const oneJan = new Date(d.getFullYear(), 0, 1);
-    return Math.ceil((((d.getTime() - oneJan.getTime()) / 86400000) + oneJan.getDay() + 1) / 7);
-}
-
-async function checkWeeklyReset() {
-    const currentWeek = getWeekNumber(new Date());
-    const lastReset = localStorage.getItem('last_reset_week');
-
-    // Si la semaine stockée est différente de la semaine actuelle
-    if (lastReset && lastReset != currentWeek) {
-        try {
-            // 1. Récupérer le Top 3
-            const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(3));
-            const snap = await getDocs(q);
-            const top3 = snap.docs.map(d => d.data());
-
-            if (top3.length > 0) {
-                // 2. Sauvegarder dans "archives"
-                await addDoc(collection(db, "archives"), {
-                    week: lastReset,
-                    year: new Date().getFullYear(),
-                    winners: top3,
-                    timestamp: Date.now()
-                });
-
-                // 3. Supprimer TOUS les scores pour recommencer à zéro
-                const allScores = await getDocs(collection(db, "scores"));
-                const deletePromises = allScores.docs.map(d => deleteDoc(doc(db, "scores", d.id)));
-                await Promise.all(deletePromises);
-                
-                console.log("Reset hebdomadaire effectué !");
-                window.loadLeaderboard(); // Rafraîchir l'affichage
-            }
-        } catch (e) {
-            console.error("Erreur reset:", e);
-        }
-    }
-    localStorage.setItem('last_reset_week', currentWeek);
-}
-
-// Appeler la vérification au chargement
-checkWeeklyReset();
 
 window.renderLeaderboard = function(entries) {
   const el = document.getElementById('lb-list');
   if (!el) return;
-  if (!entries || entries.length === 0) {
-    el.innerHTML = '<div class="lb-empty">Aucun score encore — soyez le premier ! 🌙</div>';
-    return;
-  }
-  const medals  = ['🥇','🥈','🥉'];
-  const classes = ['gold','silver','bronze'];
-  el.innerHTML = entries.map((e, i) => {
-    const isTop    = i === 0;
-    const medal    = i < 3
-      ? `<span class="lb-rank ${classes[i]}">${medals[i]}</span>`
-      : `<span class="lb-rank">${i+1}</span>`;
-    const safeName = String(e.name).replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
-  }).join('');
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = entries.map((e, i) => `<div class="lb-row">${i < 3 ? medals[i] : i+1} <span class="lb-name">${e.name}</span> <span class="lb-score">${e.score}</span></div>`).join('');
 };
 
-	window.openHistory = async function() {
-    showScreen('history'); // Il faudra ajouter 'history' dans ta fonction showScreen
-    const el = document.getElementById('history-list');
-    el.innerHTML = "Chargement...";
-    
-    try {
-        const q = query(collection(db, "archives"), orderBy("timestamp", "desc"), limit(10));
-        const snap = await getDocs(q);
-        
-        if (snap.empty) {
-            el.innerHTML = "Aucune archive pour le moment.";
-            return;
-        }
-
-        el.innerHTML = snap.docs.map(doc => {
-            const data = doc.data();
-            return `
-                <div style="border-bottom:1px solid rgba(255,255,255,0.1); padding:10px; margin-bottom:5px;">
-                    <div style="color:var(--accent); font-size:0.8rem;">Semaine ${data.week} - ${data.year}</div>
-                    ${data.winners.map((w, i) => `<div>${i+1}. ${w.name} (${Math.floor(w.score)})</div>`).join('')}
-                </div>
-            `;
-        }).join('');
-    } catch(e) {
-        el.innerHTML = "Erreur de chargement.";
-    }
-}
+let inputSequence = "";
+window.addEventListener("keydown", (e) => {
+  inputSequence += e.key.toLowerCase();
+  if (inputSequence.endsWith("mdn")) openGame();
+});
+</script>
 	
 </script>
 	
