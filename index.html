@@ -1607,7 +1607,7 @@ function movePlayer(e) {
   const step = 28;
   if (e.key === "ArrowLeft")  player.x = Math.max(0, player.x - step);
   if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + step);
-    sounds.move.cloneNode().play();
+
 }
 
 // --- DESSIN FUSÉE ---
@@ -1799,28 +1799,28 @@ function animate() {
   if (keysPressed["ArrowLeft"])  { player.x = Math.max(0, player.x - playerSpeed); if(sounds.move) sounds.move.cloneNode().play(); }
   if (keysPressed["ArrowRight"]) { player.x = Math.min(canvas.width - player.w, player.x + playerSpeed); if(sounds.move) sounds.move.cloneNode().play(); }
 
-  obstacles.forEach((obs, i) => {
+
+for (let i = obstacles.length - 1; i >= 0; i--) {
+    const obs = obstacles[i];
     const currentVel = obs.fast ? vel * 1.9 : vel;
 
     if (score >= 5000) {
-      // Chaos : rebonds sur tous les bords
       obs.x += obs.vx * currentVel;
       obs.y += obs.vy * currentVel;
       if (obs.x <= 0 || obs.x + obs.size >= canvas.width) obs.vx *= -1;
       if (obs.y <= 0 || obs.y + obs.size >= canvas.height) obs.vy *= -1;
     } else {
-      // Normal : vertical + horizontal selon palier
       obs.y += obs.vy * currentVel;
       obs.x += obs.vx * (currentVel * 0.5);
       obs.x = Math.max(0, Math.min(canvas.width - obs.size, obs.x));
     }
 
-    drawObstacle(obs);
-
     if (score < 5000 && obs.y > canvas.height + obs.size) {
       obstacles.splice(i, 1);
-      return;
+      continue;
     }
+
+    drawObstacle(obs);
 
     const hardMode = score >= 1000;
     const margin = hardMode ? 2 : 6;
@@ -1831,8 +1831,9 @@ function animate() {
       player.y + player.h - margin > obs.y + margin
     ) {
       gameOver();
+      return;
     }
-  });
+  }
 
 
   score += 0.3;
