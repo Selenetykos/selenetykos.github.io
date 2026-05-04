@@ -1715,37 +1715,31 @@ function drawObstacle(obs) {
 }
 
 function spawnObstacle() {
-  const size = 30 + Math.random() * 25;
-  const x = Math.random() * (canvas.width - size);
-  
-  // Initialisation des vitesses par défaut
+  const sz = 30 + Math.random() * 25;
+  const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
+  const color = type === 'planet' 
+    ? `hsl(${Math.random() * 360}, 50%, 60%)` 
+    : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
+
+  const fast = Math.random() < 0.15;
+  const zigzag = score > 500 && Math.random() < 0.3;
+  const zigzagSpeed = 0.05 + Math.random() * 0.05;
+  const zigzagAmp = 1 + Math.random() * 2;
+
+  // --- LOGIQUE DES DIRECTIONS ---
   let vx = 0;
-  let vy = 1; // Direction vers le bas par défaut
+  let vy = 1;
 
-  // PHASE 3 : Après 5000 - Mouvements totalement aléatoires
   if (score >= 5000) {
-    vx = (Math.random() - 0.5) * 2; // Direction X aléatoire
-    vy = (Math.random() - 0.5) * 2; // Direction Y aléatoire (peut même remonter !)
+    // Mode Chaos : diagonale pure aléatoire
+    vx = (Math.random() - 0.5) * 3;
+    vy = (Math.random() - 0.5) * 3;
+    if (Math.abs(vy) < 0.5) vy = 1; // Évite les obstacles qui ne bougent pas verticalement
   } 
-  // PHASE 2 : Après 3000 - Ajout de mouvement horizontal
   else if (score >= 3000) {
-    vx = (Math.random() < 0.5 ? -1 : 1); // Va soit à gauche, soit à droite
+    // Mode Horizontal : tombe ET dérive
+    vx = (Math.random() - 0.5) * 2;
   }
-
-  obstacles.push({
-    x,
-    y: -size,
-    size,
-    fast: Math.random() < 0.15,
-    zigzag: score > 500 && Math.random() < 0.3,
-    zigzagPhase: 0,
-    zigzagSpeed: 0.05 + Math.random() * 0.05,
-    zigzagAmp: 1 + Math.random() * 2,
-    // Nouvelles propriétés de direction :
-    vx: vx,
-    vy: vy
-  });
-}
 
   obstacles.push({
     x: Math.random() * (canvas.width - sz),
@@ -1759,9 +1753,11 @@ function spawnObstacle() {
     zigzagAmp,
     zigzagSpeed,
     hasRing: type === 'planet' && Math.random() > 0.55,
+    vx: vx,
+    vy: vy
   });
 }
-
+	
 // --- BOUCLE DE JEU ---
 function animate() {
   if (!gameActive) return;
