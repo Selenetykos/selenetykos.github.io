@@ -1321,9 +1321,9 @@ window.addEventListener('load', () => {
 </script>		
 
 	
-	<div id="game-overlay">
+<div id="game-overlay">
   <button id="game-close-btn" onclick="closeGame()">✕ Quitter</button>
-
+ 
   <div id="game-hud">
     <div class="hud-item">Score<span class="hud-val" id="hud-score">0</span></div>
     <div class="hud-item" style="text-align:center;">
@@ -1331,29 +1331,28 @@ window.addEventListener('load', () => {
       <span class="hud-val" style="color:var(--accent); font-size:0.7rem;">← →</span>
     </div>
   </div>
-
-
+ 
   <!-- Écran titre -->
   <div id="game-title-screen">
     <div style="font-size:2.2rem; margin-bottom:4px;">🚀</div>
     <h2>Mission Selenetykos</h2>
     <p>Pilotez la fusée · Évitez les astéroïdes</p>
     <p style="font-size:0.78rem;">Touches ← → pour manœuvrer</p>
-
+ 
     <div id="game-leaderboard">
       <div class="lb-title">🏆 Meilleurs pilotes</div>
       <div id="lb-list"><div class="lb-loading">Chargement…</div></div>
     </div>
-
+ 
     <button class="game-btn" onclick="startGame()" style="margin-top:4px;">Lancer la mission</button>
   </div>
-
+ 
   <!-- Canvas de jeu -->
   <div id="game-canvas-wrap">
     <canvas id="gameCanvas" width="420" height="580"></canvas>
     <div id="game-hint">← → pour manœuvrer</div>
   </div>
-
+ 
   <!-- Écran Game Over -->
   <div id="game-over-screen">
     <div style="font-size:2.2rem;">💥</div>
@@ -1371,12 +1370,12 @@ window.addEventListener('load', () => {
     </div>
   </div>
 </div>
-
+ 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+ 
 const firebaseConfig = {
   apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
   authDomain: "selenetykos-63361.firebaseapp.com",
@@ -1385,14 +1384,14 @@ const firebaseConfig = {
   messagingSenderId: "284139581187",
   appId: "1:284139581187:web:86c38f70b37cebcfae8336"
 };
-
+ 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 const SCORES_COL = "scores";
 const LB_MAX = 8;
-
+ 
 window._fbReady = true;
-
+ 
 window.loadLeaderboard = async function() {
   const el = document.getElementById('lb-list');
   if (!el) return;
@@ -1407,65 +1406,65 @@ window.loadLeaderboard = async function() {
     console.error(e);
   }
 };
-
+ 
 window.saveScore = async function() {
   const nameInput = document.getElementById('pseudo-input');
   const btn = document.getElementById('save-score-btn');
   const feedback = document.getElementById('save-feedback');
   const name = nameInput.value.trim().substring(0, 16);
-  
-  if (!name) { 
-    feedback.textContent = "Entre ton pseudo d'abord !"; 
+ 
+  if (!name) {
+    feedback.textContent = "Entre ton pseudo d'abord !";
     feedback.style.color = "#f87171";
-    return; 
+    return;
   }
-
+ 
   btn.disabled = true;
   feedback.textContent = 'Vérification...';
   feedback.style.color = 'var(--accent)';
-
+ 
   try {
     const finalScore = Math.floor(window._gameScore || 0);
     const q = query(collection(db, SCORES_COL), where("name", "==", name));
     const existing = await getDocs(q);
-    
+ 
     let bestPrev = -1;
     let existingDocId = null;
-
+ 
     existing.forEach(d => {
       if (d.data().score > bestPrev) {
         bestPrev = d.data().score;
         existingDocId = d.id;
       }
     });
-
+ 
     if (bestPrev !== -1 && finalScore <= bestPrev) {
       feedback.textContent = `🌙 Record : ${bestPrev}. Fais mieux !`;
-      feedback.style.color = '#fbbf24'; 
+      feedback.style.color = '#fbbf24';
       btn.disabled = false;
-      return; 
+      return;
     }
-
+ 
     feedback.textContent = 'Enregistrement...';
-    if(window.sounds && window.sounds.success) window.sounds.success.play();
-
+    if (window.sounds && window.sounds.success) window.sounds.success.play();
+ 
     if (existingDocId) {
       for (const d of existing.docs) {
         await deleteDoc(doc(db, SCORES_COL, d.id));
       }
     }
-
-    await addDoc(collection(db, SCORES_COL), { 
-      name: name, 
-      score: finalScore, 
-      date: Date.now() 
+ 
+    await addDoc(collection(db, SCORES_COL), {
+      name: name,
+      score: finalScore,
+      date: Date.now()
     });
-
+ 
     feedback.textContent = '✓ Record pulvérisé !';
-    feedback.style.color = '#4ade80'; 
+    feedback.style.color = '#4ade80';
     nameInput.value = '';
     window.loadLeaderboard();
-    
+ 
   } catch(e) {
     feedback.textContent = 'Erreur de connexion.';
     feedback.style.color = '#f87171';
@@ -1473,29 +1472,24 @@ window.saveScore = async function() {
     console.error(e);
   }
 };
-
-	
 </script>
-
+ 
 <script>
-
+ 
 // --- SYSTÈME AUDIO ---
 const sounds = {
   theme: new Audio('theme.mp3'),
   click: new Audio('click.mp3'),
   success: new Audio('success.mp3'),
-  dead: new Audio('dead.mp3')	
+  dead: new Audio('dead.mp3')
 };
-
-// Configuration de la musique d'ambiance
-sounds.theme.loop = true; // Pour que la musique recommence à la fin
-sounds.theme.volume = 0.5; // Volume à 50%
-	
-// --- SYSTÈME DE TOUCHES SECRÈTES UNIVERSEL ---
+sounds.theme.loop = true;
+sounds.theme.volume = 0.5;
+ 
+// --- TOUCHES SECRÈTES ---
 let inputSequence = "";
 const secretCode = "mdn";
-
-// 1. Pour l'ordinateur (clavier physique)
+ 
 window.addEventListener("keydown", (e) => {
   if (window.gameActive) return;
   inputSequence += e.key.toLowerCase();
@@ -1505,60 +1499,62 @@ window.addEventListener("keydown", (e) => {
     inputSequence = "";
   }
 });
-
-// 2. Pour ton Android (via le chat de LIREN)
-// On attend que la page soit chargée pour trouver l'input du chat
+ 
 window.addEventListener('load', () => {
   const chatInput = document.getElementById('chat-input');
   if (chatInput) {
     chatInput.addEventListener('input', () => {
       let val = chatInput.value.toLowerCase();
-      // Si "mdn" est tapé dans la barre de recherche
       if (val.includes(secretCode)) {
         openGame();
-        chatInput.value = ""; // On efface le code pour que ça reste secret
-        chatInput.blur();    // On range le clavier
+        chatInput.value = "";
+        chatInput.blur();
       }
     });
   }
 });
-
-	
-
-// --- COMMANDES TACTILES (Correction du bug de distance) ---
-// On l'initialise une seule fois ici, pas dans startGame
+ 
+// --- COMMANDES TACTILES ---
 window.addEventListener('load', () => {
   const canvas = document.getElementById("gameCanvas");
   if (!canvas) return;
-
   canvas.addEventListener("touchstart", (e) => {
     if (!gameActive) return;
-    
     const touchX = e.touches[0].clientX;
     const screenWidth = window.innerWidth;
-    const step = 28;
-
     if (touchX < screenWidth / 2) {
-      // Gauche
-      player.x = Math.max(0, player.x - step);
+      player.x = Math.max(0, player.x - 28);
     } else {
-      // Droite
-      player.x = Math.min(canvas.width - player.w, player.x + step);
+      player.x = Math.min(canvas.width - player.w, player.x + 28);
     }
-
-    
     e.preventDefault();
   }, { passive: false });
 });
+ 
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
-
+ 
+// Gradients précalculés (créés une seule fois dans startGame)
+let bgGradient = null;
+let rocketBodyGrad = null;
+let rocketTipGrad = null;
+ 
+// --- CLAVIER FLUIDE ---
+const keysPressed = {};
+ 
+window.addEventListener("keydown", (e) => {
+  if (gameActive) keysPressed[e.key] = true;
+});
+window.addEventListener("keyup", (e) => {
+  keysPressed[e.key] = false;
+});
+ 
 function openGame() {
   document.getElementById('game-overlay').style.display = 'flex';
   showScreen('title');
   if (window.loadLeaderboard) window.loadLeaderboard();
 }
-
+ 
 function closeGame() {
   gameActive = false;
   cancelAnimationFrame(animId);
@@ -1566,54 +1562,57 @@ function closeGame() {
   showScreen('title');
   inputSequence = "";
   sounds.theme.pause();
-  sounds.theme.currentTime = 0;	
-	
+  sounds.theme.currentTime = 0;
 }
-
+ 
 function showScreen(name) {
-  document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
-  document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
-  document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
-  document.getElementById('game-hud').style.display = name === 'play' ? 'flex' : 'none';
+  document.getElementById('game-title-screen').style.display  = name === 'title' ? 'flex' : 'none';
+  document.getElementById('game-canvas-wrap').style.display   = name === 'play'  ? 'flex' : 'none';
+  document.getElementById('game-over-screen').style.display   = name === 'over'  ? 'flex' : 'none';
+  document.getElementById('game-hud').style.display           = name === 'play'  ? 'flex' : 'none';
 }
-
+ 
 function startGame() {
-  sounds.theme.play();	
+  sounds.theme.play();
   showScreen('play');
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
-
-  // Reset des variables
+ 
+  // Précalcul des gradients statiques
+  bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bgGradient.addColorStop(0, "#02020f");
+  bgGradient.addColorStop(1, "#060618");
+ 
+  rocketBodyGrad = ctx.createLinearGradient(0, 0, 16, 0);
+  rocketBodyGrad.addColorStop(0, "#c8ccd8");
+  rocketBodyGrad.addColorStop(0.5, "#f0f2f7");
+  rocketBodyGrad.addColorStop(1, "#9aa0b0");
+ 
+  rocketTipGrad = ctx.createLinearGradient(0, 0, 16, 0);
+  rocketTipGrad.addColorStop(0, "#a78bfa");
+  rocketTipGrad.addColorStop(1, "#7eb8f7");
+ 
   stars2 = Array.from({length: 80}, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
     r: Math.random() * 1.3 + 0.2,
     speed: Math.random() * 1.5 + 0.5,
   }));
-
-  player = { x: canvas.width/2 - 15, y: canvas.height - 90, w: 30, h: 50 };
+ 
+  player = { x: canvas.width / 2 - 15, y: canvas.height - 90, w: 30, h: 50 };
   obstacles = [];
   score = 0;
   gameActive = true;
-
-  // ON NE MET PLUS l'addEventListener ICI !
+ 
   cancelAnimationFrame(animId);
   animate();
 }
-
-function movePlayer(e) {
-  if (!gameActive) return;
-  const step = 28;
-  if (e.key === "ArrowLeft")  player.x = Math.max(0, player.x - step);
-  if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + step);
-
-}
-
+ 
 // --- DESSIN FUSÉE ---
 function drawRocket(x, y) {
   const cx = x + 15;
-
-  // Flamme
+ 
+  // Flamme (recréée chaque frame car hauteur aléatoire)
   const flameH = 12 + Math.random() * 10;
   const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
   grad.addColorStop(0, "rgba(255,200,50,0.95)");
@@ -1626,34 +1625,27 @@ function drawRocket(x, y) {
   ctx.lineTo(cx, y + 50 + flameH);
   ctx.closePath();
   ctx.fill();
-
+ 
   // Corps
-  const bodyGrad = ctx.createLinearGradient(x+7, 0, x+23, 0);
-  bodyGrad.addColorStop(0, "#c8ccd8");
-  bodyGrad.addColorStop(0.5, "#f0f2f7");
-  bodyGrad.addColorStop(1, "#9aa0b0");
-  ctx.fillStyle = bodyGrad;
+  ctx.fillStyle = rocketBodyGrad;
   ctx.beginPath();
   ctx.roundRect(x + 7, y + 12, 16, 38, 2);
   ctx.fill();
-
+ 
   // Ailerons
   ctx.fillStyle = "#7eb8f7";
   ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.closePath(); ctx.fill();
   ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.closePath(); ctx.fill();
-
+ 
   // Pointe
-  const tipGrad = ctx.createLinearGradient(x+7, y+12, x+23, y+12);
-  tipGrad.addColorStop(0, "#a78bfa");
-  tipGrad.addColorStop(1, "#7eb8f7");
-  ctx.fillStyle = tipGrad;
+  ctx.fillStyle = rocketTipGrad;
   ctx.beginPath();
   ctx.moveTo(cx, y);
   ctx.lineTo(x + 7, y + 12);
   ctx.lineTo(x + 23, y + 12);
   ctx.closePath();
   ctx.fill();
-
+ 
   // Hublot
   ctx.fillStyle = "#00d4ff";
   ctx.shadowColor = "#00d4ff";
@@ -1663,15 +1655,14 @@ function drawRocket(x, y) {
   ctx.fill();
   ctx.shadowBlur = 0;
 }
-
+ 
 // --- DESSIN OBSTACLE ---
 function drawObstacle(obs) {
   ctx.save();
-  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  ctx.translate(obs.x + obs.size / 2, obs.y + obs.size / 2);
   const r = obs.size / 2;
-
+ 
   if (obs.type === 'planet') {
-    // Planète avec anneau possible
     ctx.fillStyle = obs.color;
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
@@ -1685,57 +1676,52 @@ function drawObstacle(obs) {
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    // Brillance
-    const gl = ctx.createRadialGradient(-r*0.35, -r*0.35, r*0.05, 0, 0, r);
-    gl.addColorStop(0, "rgba(255,255,255,0.35)");
-    gl.addColorStop(1, "rgba(0,0,0,0.5)");
-    ctx.fillStyle = gl;
+    // Brillance simple (pas de radialGradient à chaque frame)
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.arc(-r * 0.3, -r * 0.3, r * 0.4, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Astéroïde irrégulier
     ctx.fillStyle = obs.color;
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fill();
-    // Cratères
     ctx.fillStyle = "rgba(0,0,0,0.25)";
     ctx.beginPath(); ctx.arc(-r*0.3, -r*0.25, r*0.22, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(r*0.25, r*0.2, r*0.14, 0, Math.PI*2); ctx.fill();
-    // Highlight
     ctx.fillStyle = "rgba(255,255,255,0.12)";
     ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, r*0.18, 0, Math.PI*2); ctx.fill();
   }
   ctx.restore();
 }
-
+ 
+// --- SPAWN OBSTACLE ---
 function spawnObstacle() {
   const sz = 30 + Math.random() * 25;
   const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
   const color = type === 'planet'
     ? `hsl(${Math.random() * 360}, 50%, 60%)`
     : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
-
+ 
   let vx = 0;
   let vy = 1;
-
+ 
   if (score >= 5000) {
-    // Chaos total : toutes directions
+    // Chaos total : toutes directions avec rebonds
     vx = (Math.random() - 0.5) * 4;
     vy = (Math.random() - 0.5) * 4;
     if (Math.abs(vy) < 0.5) vy = vy < 0 ? -0.5 : 0.5;
   } else if (score >= 3000) {
-    // Vertical + horizontal
+    // Vertical + horizontal pour tous
     vx = (Math.random() - 0.5) * 2.5;
     vy = 1;
   } else if (score >= 1000) {
-    // Certains bougent horizontalement
+    // ~35% bougent aussi horizontalement
     vx = Math.random() < 0.35 ? (Math.random() - 0.5) * 2 : 0;
     vy = 1;
   }
-  // Avant 1000 : vx=0, vy=1 (que vertical)
-
+  // Avant 1000 : vx=0, vy=1 — descente pure
+ 
   obstacles.push({
     x: Math.random() * (canvas.width - sz),
     y: -sz - 10,
@@ -1745,145 +1731,136 @@ function spawnObstacle() {
     vx,
     vy,
     fast: Math.random() < 0.15,
-    zigzag: false, // désactivé, remplacé par la logique vx/vy
     hasRing: type === 'planet' && Math.random() > 0.55
   });
 }
-
-	
+ 
 // --- BOUCLE DE JEU ---
 function animate() {
   if (!gameActive) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Fond dégradé
-  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  bg.addColorStop(0, "#02020f");
-  bg.addColorStop(1, "#060618");
-  ctx.fillStyle = bg;
+ 
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Étoiles défilantes
-  const speed = 1.5 + score / 300;
-  stars2.forEach(s => {
-    s.y += s.speed * (speed / 1.5);
+ 
+  // Étoiles
+  const starSpeed = 1.5 + score / 300;
+  for (let i = 0; i < stars2.length; i++) {
+    const s = stars2[i];
+    s.y += s.speed * (starSpeed / 1.5);
     if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
     ctx.globalAlpha = 0.6 + Math.random() * 0.4;
     ctx.fillStyle = "#fff8e0";
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fill();
-  });
+  }
   ctx.globalAlpha = 1;
-
+ 
+  // Mouvement joueur fluide
+  const playerSpeed = 5;
+  if (keysPressed["ArrowLeft"])  player.x = Math.max(0, player.x - playerSpeed);
+  if (keysPressed["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + playerSpeed);
+ 
   // Fusée
   drawRocket(player.x, player.y);
-
-  // ── Paramètres de difficulté ──
+ 
+  // Difficulté
   const hardMode = score >= 1000;
-  // Spawn : plus fréquent après 1000, avec un double-spawn possible
   const spawnRate = hardMode ? 0.055 + Math.min(score / 8000, 0.03) : 0.032;
   if (Math.random() < spawnRate) {
     spawnObstacle();
-    // Double spawn après 2000
     if (score > 2000 && Math.random() < 0.35) spawnObstacle();
   }
-
-  // Vitesse : courbe douce avant 1000, puis nettement plus agressive
+ 
   const vel = hardMode
     ? 4.5 + (score - 1000) / 160
     : 2.8 + score / 220;
-
-const playerSpeed = 5;
-  if (keysPressed["ArrowLeft"])  player.x = Math.max(0, player.x - playerSpeed);
-  if (keysPressed["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + playerSpeed);
-
-
-for (let i = obstacles.length - 1; i >= 0; i--) {
+ 
+  // Obstacles (boucle inversée pour splice safe)
+  for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
     const currentVel = obs.fast ? vel * 1.9 : vel;
-
+ 
     if (score >= 5000) {
+      // Chaos : rebonds sur tous les bords
       obs.x += obs.vx * currentVel;
       obs.y += obs.vy * currentVel;
-      if (obs.x <= 0 || obs.x + obs.size >= canvas.width) obs.vx *= -1;
+      if (obs.x <= 0 || obs.x + obs.size >= canvas.width)  obs.vx *= -1;
       if (obs.y <= 0 || obs.y + obs.size >= canvas.height) obs.vy *= -1;
     } else {
+      // Descente verticale + drift horizontal selon palier
       obs.y += obs.vy * currentVel;
       obs.x += obs.vx * (currentVel * 0.5);
       obs.x = Math.max(0, Math.min(canvas.width - obs.size, obs.x));
     }
-
+ 
+    // Suppression si sorti par le bas (sauf chaos)
     if (score < 5000 && obs.y > canvas.height + obs.size) {
       obstacles.splice(i, 1);
       continue;
     }
-
+ 
     drawObstacle(obs);
-
-    const hardMode = score >= 1000;
+ 
+    // Collision
     const margin = hardMode ? 2 : 6;
     if (
-      player.x + margin < obs.x + obs.size - margin &&
+      player.x + margin        < obs.x + obs.size - margin &&
       player.x + player.w - margin > obs.x + margin &&
-      player.y + margin < obs.y + obs.size - margin &&
+      player.y + margin        < obs.y + obs.size - margin &&
       player.y + player.h - margin > obs.y + margin
     ) {
       gameOver();
       return;
     }
   }
-
-
-  score += 0.5;
-window._gameScore = score;
+ 
+  // Score
+  score += 0.3;
+  window._gameScore = score;
   document.getElementById('hud-score').textContent = Math.floor(score);
-  //document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
-  // Indicateur de zone danger
+ 
+  // Indicateur danger
   const dangerEl = document.getElementById('hud-danger');
   if (dangerEl) {
     if (score >= 1000) {
       dangerEl.style.display = 'block';
-      dangerEl.textContent = score >= 2000 ? '⚠️ CRITIQUE' : '⚠️ DANGER';
-      dangerEl.style.color = score >= 2000 ? '#f87171' : '#fbbf24';
+      dangerEl.textContent   = score >= 2000 ? '⚠️ CRITIQUE' : '⚠️ DANGER';
+      dangerEl.style.color   = score >= 2000 ? '#f87171'     : '#fbbf24';
     } else {
       dangerEl.style.display = 'none';
     }
   }
-
+ 
   animId = requestAnimationFrame(animate);
 }
-
+ 
+// --- GAME OVER ---
 function gameOver() {
   gameActive = false;
   cancelAnimationFrame(animId);
-  window.removeEventListener("keydown", movePlayer);
-  sounds.dead.play();		
+  sounds.dead.play();
   sounds.theme.pause();
-  sounds.theme.currentTime = 0;	
-		
-  
+  sounds.theme.currentTime = 0;
+ 
   const finalScore = Math.floor(score);
   const scoreEl = document.getElementById('game-final-score');
-  
-  // Condition : finit par 67 ET score <= 1000
+ 
   if (finalScore % 100 === 67 && finalScore <= 1000) {
     const scoreStr = finalScore.toString();
-    const prefix = scoreStr.slice(0, -2); // Les chiffres avant le 67 (ex: "2" pour 267)
-    
-    // On injecte le 6 et le 7 avec leurs animations inversées
+    const prefix = scoreStr.slice(0, -2);
     scoreEl.innerHTML = `${prefix}<span class="digit-up">6</span><span class="digit-down">7</span>`;
   } else {
     scoreEl.textContent = finalScore;
   }
-
+ 
   document.getElementById('pseudo-input').value = '';
   document.getElementById('save-feedback').textContent = '';
   document.getElementById('save-score-btn').disabled = false;
   showScreen('over');
 }
-
-// ─── LEADERBOARD RENDER ───
+ 
+// --- LEADERBOARD ---
 window.renderLeaderboard = function(entries) {
   const el = document.getElementById('lb-list');
   if (!el) return;
@@ -1891,51 +1868,32 @@ window.renderLeaderboard = function(entries) {
     el.innerHTML = '<div class="lb-empty">Aucun score encore — soyez le premier ! 🌙</div>';
     return;
   }
-  const medals = ['🥇','🥈','🥉'];
+  const medals  = ['🥇','🥈','🥉'];
   const classes = ['gold','silver','bronze'];
   el.innerHTML = entries.map((e, i) => {
-    const isTop = i === 0;
-    const medal = i < 3
+    const isTop    = i === 0;
+    const medal    = i < 3
       ? `<span class="lb-rank ${classes[i]}">${medals[i]}</span>`
       : `<span class="lb-rank">${i+1}</span>`;
     const safeName = String(e.name).replace(/</g,'&lt;').replace(/>/g,'&gt;');
     return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
   }).join('');
 };
-
-// On l'écouteur une seule fois pour éviter les doublons qui causent des bugs
-const keysPressed = {};
-
-window.addEventListener("keydown", (e) => {
-  if (!gameActive) return;
-  keysPressed[e.key] = true;
-});
-
-window.addEventListener("keyup", (e) => {
-  keysPressed[e.key] = false;
-});
-	
+ 
 </script>
-
+ 
 <script>
 function acceptCookies() {
-    // On tente l'ouverture forcée dans un nouvel onglet
-    const newWindow = window.open("https://www.lafabrique-cookies.fr/", "_blank", "noopener,noreferrer");
-    
-    // Si pour une raison X le navigateur bloque le popup, on peut l'aider ainsi :
-    if (newWindow) {
-      newWindow.focus();
-    }
-
-    // On cache la bannière
-    document.getElementById('cookie-banner').style.display = 'none';
-  }
-
-  function refuseCookies() {
-    // Cache simplement la bannière et ne fait rien d'autre
-    document.getElementById('cookie-banner').style.display = 'none';
-  }
+  const newWindow = window.open("https://www.lafabrique-cookies.fr/", "_blank", "noopener,noreferrer");
+  if (newWindow) newWindow.focus();
+  document.getElementById('cookie-banner').style.display = 'none';
+}
+ 
+function refuseCookies() {
+  document.getElementById('cookie-banner').style.display = 'none';
+}
 </script>
-	
+ 
+
 </body>
 </html>
