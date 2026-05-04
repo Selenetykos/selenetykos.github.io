@@ -1796,8 +1796,8 @@ function animate() {
     : 2.8 + score / 220;
 
   const playerSpeed = 5;
-  if (keysPressed["ArrowLeft"])  { player.x = Math.max(0, player.x - playerSpeed); if(sounds.move) sounds.move.cloneNode().play(); }
-  if (keysPressed["ArrowRight"]) { player.x = Math.min(canvas.width - player.w, player.x + playerSpeed); if(sounds.move) sounds.move.cloneNode().play(); }
+  if (keysPressed["ArrowLeft"])  { player.x = Math.max(0, player.x - playerSpeed);
+  if (keysPressed["ArrowRight"]) { player.x = Math.min(canvas.width - player.w, player.x + playerSpeed); 
 
 
 for (let i = obstacles.length - 1; i >= 0; i--) {
