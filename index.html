@@ -1203,7 +1203,7 @@ function trouverReponse(texte) {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // ── LUNE — apparaît à partir de progress 0.6, grandit depuis le centre ──
+    // ── LUNE — apparaît à partir de progress 0.6, grandit depuis le  centre ──
     if (progress > 0.55) {
       const moonT     = (progress - 0.55) / 0.45; // 0→1 sur la dernière partie
       const moonEase  = moonT * moonT * (3 - 2 * moonT); // smooth
