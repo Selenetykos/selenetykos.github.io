@@ -1532,24 +1532,22 @@ window.addEventListener('load', () => {
   const canvas = document.getElementById("gameCanvas");
   if (!canvas) return;
 
-  canvas.addEventListener("touchstart", (e) => {
-    if (!gameActive) return;
-    
-    const touchX = e.touches[0].clientX;
-    const screenWidth = window.innerWidth;
-    const step = 28;
+  let touchTargetX = null;
 
-    if (touchX < screenWidth / 2) {
-      // Gauche
-      player.x = Math.max(0, player.x - step);
-    } else {
-      // Droite
-      player.x = Math.min(canvas.width - player.w, player.x + step);
-    }
-	  sounds.move.cloneNode().play();
-    
-    e.preventDefault();
-  }, { passive: false });
+canvas.addEventListener("touchstart", (e) => {
+  if (!gameActive) return;
+  touchTargetX = e.touches[0].clientX;
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("touchmove", (e) => {
+  if (!gameActive) return;
+  touchTargetX = e.touches[0].clientX;
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("touchend", () => {
+  touchTargetX = null;
 });
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
@@ -1865,7 +1863,21 @@ window._gameScore = score;
       dangerEl.style.display = 'none';
     }
   }
+// Mouvement clavier fluide
+const spd = 5;
+if (keys["ArrowLeft"])  player.x = Math.max(0, player.x - spd);
+if (keys["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + spd);
 
+// Mouvement tactile fluide
+if (touchTargetX !== null) {
+  const canvasRect = canvas.getBoundingClientRect();
+  const relativeX = touchTargetX - canvasRect.left;
+  const targetX = (relativeX / canvasRect.width) * canvas.width - player.w / 2;
+  player.x += (targetX - player.x) * 0.12;
+  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+}
+
+// -- ensuite cette ligne qui était déjà là --
   animId = requestAnimationFrame(animate);
 }
 
@@ -1918,19 +1930,10 @@ window.renderLeaderboard = function(entries) {
   }).join('');
 };
 
-// On l'écouteur une seule fois pour éviter les doublons qui causent des bugs
-window.addEventListener("keydown", (e) => {
-  if (!gameActive) return;
-  const step = 28;
-  if (e.key === "ArrowLeft") {
-    player.x = Math.max(0, player.x - step);
-    if(sounds.move) sounds.move.cloneNode().play();
-  }
-  if (e.key === "ArrowRight") {
-    player.x = Math.min(canvas.width - player.w, player.x + step);
-    if(sounds.move) sounds.move.cloneNode().play();
-  }
-});
+	
+const keys = {};
+window.addEventListener("keydown", (e) => { keys[e.key] = true; });
+window.addEventListener("keyup", (e) => { keys[e.key] = false; });
 	
 </script>
 
