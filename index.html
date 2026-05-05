@@ -1458,260 +1458,268 @@ window.addEventListener('load', () => {
 <script>
 	
 // ==========================================
-// 1. VARIABLES GLOBALES ET AUDIO
+// 1. CONFIGURATION & ÉTAT
 // ==========================================
-let canvas, ctx, player, obstacles = [], score = 0, gameActive = false;
-let animId, spawnInterval, vel = 2.8;
+let canvas, ctx, score = 0, gameActive = false, vel = 2.8;
+let player, obstacles = [], stars2 = [], animId, spawnInterval;
 
+// On prépare les sons
 const sounds = {
   move: new Audio('move.mp3'),
   theme: new Audio('theme.mp3')
 };
 
 // ==========================================
-// 2. GESTION DES COOKIES ET DU LOADER
+// 2. INITIALISATION & COOKIES
 // ==========================================
 window.addEventListener('load', () => {
-  // Vérification si les cookies ont déjà été refusés
   if (localStorage.getItem('cookies-refused') === 'true') {
     const banner = document.getElementById('cookie-banner');
     if (banner) banner.style.display = 'none';
   }
-
-  // Loader qui disparaît rapidement (1.2 sec)
   setTimeout(() => {
-    const loader = document.getElementById('loader');
-    const main = document.getElementById('main');
-    if(loader) loader.classList.add('hidden');
-    if(main) main.classList.add('visible');
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('main').classList.add('visible');
   }, 1200);
 });
 
-// Appelée par le bouton HTML "Continuer sans accepter"
 function refuseCookies() {
-  const banner = document.getElementById('cookie-banner');
-  if (banner) banner.style.display = 'none';
+  document.getElementById('cookie-banner').style.display = 'none';
   localStorage.setItem('cookies-refused', 'true');
 }
 
 // ==========================================
-// 3. AFFICHAGE DES ÉCRANS DU JEU ET CODE MDN
+// 3. CODE SECRET "MDN"
 // ==========================================
-function showScreen(screenId) {
-  document.getElementById('game-title-screen').style.display = screenId === 'title' ? 'flex' : 'none';
-  document.getElementById('game-canvas-wrap').style.display = screenId === 'play' ? 'flex' : 'none';
-  document.getElementById('game-hud').style.display = screenId === 'play' ? 'flex' : 'none';
-  document.getElementById('game-over-screen').style.display = screenId === 'gameover' ? 'flex' : 'none';
-}
+let inputBuffer = "";
+window.addEventListener("keydown", (e) => {
+  inputBuffer += e.key.toLowerCase();
+  if (inputBuffer.length > 3) inputBuffer = inputBuffer.substring(inputBuffer.length - 3);
+  if (inputBuffer === "mdn") {
+    openGame();
+    inputBuffer = "";
+  }
+});
 
 function openGame() {
   document.getElementById('game-overlay').style.display = 'flex';
   showScreen('title');
-  // Charge l'historique Firebase si la fonction existe (dans le script de type module)
-  if (typeof window.loadLeaderboard === 'function') {
-    window.loadLeaderboard();
+  if (typeof window.loadLeaderboard === 'function') window.loadLeaderboard();
+}
+
+function showScreen(id) {
+  ['game-title-screen', 'game-canvas-wrap', 'game-hud', 'game-over-screen'].forEach(s => {
+    const el = document.getElementById(s);
+    if(el) el.style.display = 'none';
+  });
+  if(id === 'play') {
+    document.getElementById('game-canvas-wrap').style.display = 'flex';
+    document.getElementById('game-hud').style.display = 'flex';
+  } else {
+    const el = document.getElementById(id === 'title' ? 'game-title-screen' : 'game-over-screen');
+    if(el) el.style.display = 'flex';
   }
 }
 
-function closeGame() {
-  document.getElementById('game-overlay').style.display = 'none';
-  gameActive = false;
-  cancelAnimationFrame(animId);
-  clearInterval(spawnInterval);
-}
-
-// Le code secret "mdn"
-let inputBuffer = "";
+// ==========================================
+// 4. MOUVEMENT FLUIDE (GLISSE)
+// ==========================================
+// Au lieu de changer X, on change la vitesse cible (targetVx)
 window.addEventListener("keydown", (e) => {
-  // On n'écoute le code que si le jeu n'est pas déjà ouvert
-  if (document.getElementById('game-overlay').style.display !== 'flex') {
-    inputBuffer += e.key.toLowerCase();
-    if (inputBuffer.length > 3) inputBuffer = inputBuffer.substring(inputBuffer.length - 3);
-    
-    if (inputBuffer === "mdn") {
-      openGame();
-      inputBuffer = ""; // Reset après activation
-    }
-  }
+  if (!gameActive) return;
+  if (e.key === "ArrowLeft") player.targetVx = -8;
+  if (e.key === "ArrowRight") player.targetVx = 8;
 });
 
-// ==========================================
-// 4. CONTRÔLES DU JOUEUR (TACTILE + CLAVIER)
-// ==========================================
-function handleMove(direction) {
-  if (!gameActive || !player) return;
-  const step = 28;
-  
-  if (direction === 'left') {
-    player.x = Math.max(0, player.x - step);
-  } else {
-    player.x = Math.min(canvas.width - player.w, player.x + step);
-  }
-
-  if(sounds.move) {
-    const s = sounds.move.cloneNode();
-    s.volume = 0.3;
-    s.play().catch(e=>console.log("Son bloqué par le navigateur"));
-  }
-}
-
-// Écouteur Tactile pour Tablette (Moitié gauche / Moitié droite de l'écran entier)
+// Idem pour le tactile sur toute la largeur
 window.addEventListener("touchstart", (e) => {
   if (!gameActive) return;
   const touchX = e.touches[0].clientX;
-  const screenWidth = window.innerWidth;
-
-  if (touchX < screenWidth / 2) handleMove('left');
-  else handleMove('right');
-
-  // Empêche le zoom/sélection sur tablette
+  if (touchX < window.innerWidth / 2) player.targetVx = -8;
+  else player.targetVx = 8;
   if (e.cancelable) e.preventDefault();
 }, { passive: false });
 
-// Écouteur Clavier
-window.addEventListener("keydown", (e) => {
-  if (!gameActive) return;
-  if (e.key === "ArrowLeft") handleMove('left');
-  if (e.key === "ArrowRight") handleMove('right');
-});
+// On remet la vitesse à 0 quand on lâche
+window.addEventListener("keyup", () => { if(player) player.targetVx = 0; });
+window.addEventListener("touchend", () => { if(player) player.targetVx = 0; });
 
 // ==========================================
-// 5. MÉCANIQUE DU JEU (SPAWN & ANIMATION)
+// 5. DESSIN DES GRAPHISMES
 // ==========================================
+
+function drawPlayer() {
+  ctx.save();
+  ctx.translate(player.x + player.w/2, player.y + player.h/2);
+  
+  // Inclinaison de la fusée selon la vitesse (Effet glisse)
+  let tilt = player.vx * 0.05;
+  ctx.rotate(tilt);
+
+  // Flamme animée
+  if (gameActive) {
+    ctx.fillStyle = Math.random() > 0.5 ? "#f59e0b" : "#ef4444";
+    ctx.beginPath();
+    ctx.moveTo(-5, 20); ctx.lineTo(0, 35 + Math.random()*10); ctx.lineTo(5, 20);
+    ctx.fill();
+  }
+
+  // Corps de la fusée
+  ctx.fillStyle = "#f8fafc"; // Blanc métal
+  ctx.beginPath();
+  ctx.moveTo(0, -22); // Pointe
+  ctx.bezierCurveTo(15, -10, 15, 10, 10, 20); // Côté droit
+  ctx.lineTo(-10, 20); // Bas
+  ctx.bezierCurveTo(-15, 10, -15, -10, 0, -22); // Côté gauche
+  ctx.fill();
+
+  // Hublot
+  ctx.fillStyle = "#7eb8f7";
+  ctx.beginPath();
+  ctx.arc(0, -5, 5, 0, Math.PI*2);
+  ctx.fill();
+
+  // Ailerons
+  ctx.fillStyle = "#7eb8f7";
+  ctx.fillRect(-15, 10, 5, 10);
+  ctx.fillRect(10, 10, 5, 10);
+
+  ctx.restore();
+}
+
+function drawObstacle(obs) {
+  ctx.save();
+  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
+  
+  if (obs.type === 'planet') {
+    // Ombre portée interne
+    let grad = ctx.createRadialGradient(-obs.size/4, -obs.size/4, 0, 0, 0, obs.size/2);
+    grad.addColorStop(0, obs.color);
+    grad.addColorStop(1, '#000');
+    
+    // Anneau si la planète en a un
+    if (obs.hasRing) {
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, obs.size, obs.size/3, Math.PI/4, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, obs.size/2, 0, Math.PI*2);
+    ctx.fill();
+  } else {
+    // Astéroïde rocheux
+    ctx.fillStyle = obs.color;
+    ctx.beginPath();
+    for(let i=0; i<8; i++) {
+        let angle = (i/8) * Math.PI*2;
+        let r = (obs.size/2) * (0.8 + Math.random()*0.4);
+        ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ==========================================
+// 6. BOUCLE DE JEU
+// ==========================================
+
 function spawnObstacle() {
-  const sz = 30 + Math.random() * 25;
-  const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
+  const sz = 35 + Math.random() * 25;
+  const type = Math.random() > 0.7 ? 'planet' : 'asteroid';
   const color = type === 'planet' 
     ? `hsl(${Math.random() * 360}, 50%, 60%)` 
-    : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
+    : `hsl(0, 0%, ${30 + Math.random() * 20}%)`;
 
-  let vx = 0; 
-  let vy = 1; // Tombent par défaut avant 1000
-
-  // Les phases de difficulté
-  if (score >= 5000) {
-    vx = (Math.random() - 0.5) * 5;
-    vy = (Math.random() - 0.5) * 5;
-    if (Math.abs(vy) < 0.5) vy = 1; // Anti sur-place
-  } 
-  else if (score >= 3000) {
-    vx = (Math.random() < 0.5 ? -2 : 2); // Droite ou gauche
-    vy = 1.2;
-  }
-  else if (score >= 1000) {
-    vx = 0;
-    vy = 1.5;
-  }
+  let vx = 0, vy = 1;
+  if (score >= 5000) { vx = (Math.random()-0.5)*6; vy = (Math.random()-0.5)*6; }
+  else if (score >= 3000) { vx = (Math.random() < 0.5 ? -2.5 : 2.5); vy = 1.2; }
+  else if (score >= 1000) { vy = 1.5; }
 
   obstacles.push({
     x: Math.random() * (canvas.width - sz),
-    y: -sz - 10,
-    size: sz,
-    type, color, vx, vy,
+    y: -sz - 20,
+    size: sz, type, color, vx, vy,
     fast: Math.random() < 0.15,
-    hasRing: type === 'planet' && Math.random() > 0.55
+    hasRing: type === 'planet' && Math.random() > 0.4
   });
-}
-
-function startGame() {
-  showScreen('play');
-  canvas = document.getElementById("gameCanvas");
-  ctx = canvas.getContext("2d");
-
-  // Reset des variables
-  player = { x: canvas.width/2 - 15, y: canvas.height - 60, w: 30, h: 45 };
-  obstacles = [];
-  score = 0;
-  gameActive = true;
-
-  if(sounds.theme) sounds.theme.play().catch(e=>console.log(e));
-
-  // Lancement du spawn
-  clearInterval(spawnInterval);
-  spawnInterval = setInterval(() => { if(gameActive) spawnObstacle(); }, 800);
-
-  // Lancement de l'animation
-  cancelAnimationFrame(animId);
-  animate();
 }
 
 function animate() {
   if (!gameActive) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // Vitesse globale évolutive
-  vel = score >= 1000 ? 4.5 + (score - 1000) / 160 : 2.8;
+  // 1. PHYSIQUE DE GLISSE DU JOUEUR
+  // On rapproche la vitesse actuelle (vx) de la vitesse cible (targetVx)
+  player.vx += (player.targetVx - player.vx) * 0.12; 
+  player.x += player.vx;
 
-  // Dessin Joueur (Rectangle basique, à remplacer par ton image si tu en as une)
-  ctx.fillStyle = "#7eb8f7";
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+  // Limites écran
+  if (player.x < 0) { player.x = 0; player.vx *= -0.5; }
+  if (player.x > canvas.width - player.w) { player.x = canvas.width - player.w; player.vx *= -0.5; }
 
-  // Mise à jour des obstacles
+  drawPlayer();
+
+  // 2. OBSTACLES
+  vel = score >= 1000 ? 4.5 + (score - 1000) / 180 : 2.8;
+
   for (let i = obstacles.length - 1; i >= 0; i--) {
     let obs = obstacles[i];
-    const currentVel = obs.fast ? vel * 1.6 : vel;
+    let spd = obs.fast ? vel * 1.6 : vel;
     
-    // Déplacement
-    obs.x += obs.vx * currentVel;
-    obs.y += obs.vy * currentVel;
+    obs.x += obs.vx * spd;
+    obs.y += obs.vy * spd;
 
-    // Phase 2 (1000 à 3000) : Yoyo vertical
-    if (score >= 1000 && score < 3000) {
-      if (obs.y >= canvas.height - obs.size || obs.y <= 0) obs.vy *= -1;
+    // Rebonds phases
+    if (score >= 1000) {
+      if (obs.y >= canvas.height - obs.size || (score < 5000 && obs.y <= 0)) obs.vy *= -1;
     }
-    // Phase 3 (3000) : Rebond sur les côtés et vertical
     if (score >= 3000) {
       if (obs.x <= 0 || obs.x >= canvas.width - obs.size) obs.vx *= -1;
-      if (obs.y >= canvas.height - obs.size || obs.y <= 0) obs.vy *= -1;
-    }
-    // Phase 4 (5000) : Chaos (Maintien des rebonds)
-    if (score >= 5000) {
-      if (obs.y <= 0) obs.vy = Math.abs(obs.vy);
-      if (obs.y >= canvas.height - obs.size) obs.vy = -Math.abs(obs.vy);
     }
 
-    // Dessin des obstacles
-    ctx.fillStyle = obs.color;
-    ctx.beginPath();
-    ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI*2);
-    ctx.fill();
+    drawObstacle(obs);
 
-    // Hitbox (Collisions)
-    const margin = 4;
-    if (player.x + margin < obs.x + obs.size - margin &&
-        player.x + player.w - margin > obs.x + margin &&
-        player.y + margin < obs.y + obs.size - margin &&
-        player.y + player.h - margin > obs.y + margin) {
-      gameOver();
-    }
+    // Collisions précises
+    let dx = (player.x + player.w/2) - (obs.x + obs.size/2);
+    let dy = (player.y + player.h/2) - (obs.y + obs.size/2);
+    let distance = Math.sqrt(dx*dx + dy*dy);
+    if (distance < (obs.size/2 + 12)) gameOver();
 
-    // Nettoyage : Si on est avant 1000 et qu'elle sort en bas, on la supprime
-    if (score < 1000 && obs.y > canvas.height + 50) {
-      obstacles.splice(i, 1);
-    }
+    if (score < 1000 && obs.y > canvas.height + 100) obstacles.splice(i, 1);
   }
 
-  // Incrémentation du score
-  score += 1;
-  const hudScore = document.getElementById('hud-score'); // Assure-toi que cet ID existe dans ton HUD
-  if(hudScore) hudScore.innerText = Math.floor(score);
-  
+  score++;
+  if(document.getElementById('hud-score')) document.getElementById('hud-score').innerText = Math.floor(score);
   animId = requestAnimationFrame(animate);
+}
+
+function startGame() {
+  canvas = document.getElementById("gameCanvas");
+  ctx = canvas.getContext("2d");
+  player = { x: canvas.width/2 - 15, y: canvas.height - 80, w: 30, h: 45, vx: 0, targetVx: 0 };
+  obstacles = []; score = 0; gameActive = true;
+  showScreen('play');
+  clearInterval(spawnInterval);
+  spawnInterval = setInterval(() => { if(gameActive) spawnObstacle(); }, 800);
+  animate();
 }
 
 function gameOver() {
   gameActive = false;
   clearInterval(spawnInterval);
   cancelAnimationFrame(animId);
-  
   showScreen('gameover');
-  
-  const finalScoreEl = document.getElementById('game-final-score');
-  if(finalScoreEl) finalScoreEl.innerText = Math.floor(score);
+  document.getElementById('game-final-score').innerText = Math.floor(score);
+
 }
 
 	</script>
-
 
 
 
