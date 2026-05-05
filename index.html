@@ -1534,19 +1534,19 @@ window.addEventListener('load', () => {
 
 
 
-canvas.addEventListener("touchstart", (e) => {
+document.addEventListener("touchstart", (e) => {
   if (!gameActive) return;
   touchTargetX = e.touches[0].clientX;
   e.preventDefault();
 }, { passive: false });
 
-canvas.addEventListener("touchmove", (e) => {
+document.addEventListener("touchmove", (e) => {
   if (!gameActive) return;
   touchTargetX = e.touches[0].clientX;
   e.preventDefault();
 }, { passive: false });
 
-canvas.addEventListener("touchend", () => {
+document.addEventListener("touchend", () => {
   touchTargetX = null;
 });
 });
@@ -1865,8 +1865,8 @@ window._gameScore = score;
       dangerEl.style.display = 'none';
     }
   }
-// Mouvement clavier fluide
-const spd = 5;
+// Mouvement clavier fluide 
+const spd = 3;
 if (keys["ArrowLeft"])  player.x = Math.max(0, player.x - spd);
 if (keys["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + spd);
 
@@ -1875,7 +1875,7 @@ if (touchTargetX !== null) {
   const canvasRect = canvas.getBoundingClientRect();
   const relativeX = touchTargetX - canvasRect.left;
   const targetX = (relativeX / canvasRect.width) * canvas.width - player.w / 2;
-  player.x += (targetX - player.x) * 0.12;
+  player.x += (targetX - player.x) * 0.07;
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
 }
 
