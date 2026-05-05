@@ -1456,91 +1456,106 @@ window.addEventListener('load', () => {
 </div>
 
 <script>
-// --- CONFIGURATION & ÉTAT DU JEU ---
+	
+// ==========================================
+// 1. VARIABLES GLOBALES ET AUDIO
+// ==========================================
 let canvas, ctx, player, obstacles = [], score = 0, gameActive = false;
-let animId, stars2 = [], vel = 2.8;
+let animId, spawnInterval, vel = 2.8;
 
 const sounds = {
-  move: new Audio('move.mp3'), // Assure-toi que le fichier existe
+  move: new Audio('move.mp3'),
   theme: new Audio('theme.mp3')
 };
 
-// --- 1. GESTION DES COOKIES ---
+// ==========================================
+// 2. GESTION DES COOKIES ET DU LOADER
+// ==========================================
+window.addEventListener('load', () => {
+  // Vérification si les cookies ont déjà été refusés
+  if (localStorage.getItem('cookies-refused') === 'true') {
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  // Loader qui disparaît rapidement (1.2 sec)
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    const main = document.getElementById('main');
+    if(loader) loader.classList.add('hidden');
+    if(main) main.classList.add('visible');
+  }, 1200);
+});
+
+// Appelée par le bouton HTML "Continuer sans accepter"
 function refuseCookies() {
   const banner = document.getElementById('cookie-banner');
   if (banner) banner.style.display = 'none';
   localStorage.setItem('cookies-refused', 'true');
 }
 
-// --- 2. INITIALISATION AU CHARGEMENT ---
-window.addEventListener('load', () => {
-  // Vérif cookies
-  if (localStorage.getItem('cookies-refused') === 'true') {
-    const banner = document.getElementById('cookie-banner');
-    if (banner) banner.style.display = 'none';
-  }
-
-  // Loader rapide (1.2s)
-  setTimeout(() => {
-    document.getElementById('loader').classList.add('hidden');
-    document.getElementById('main').classList.add('visible');
-  }, 1200);
-});
-
-// --- 3. SYSTÈME DE SPAWN (PHASES DE JEU) ---
-function spawnObstacle() {
-  const sz = 30 + Math.random() * 25;
-  const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
-  const color = type === 'planet' 
-    ? `hsl(${Math.random() * 360}, 50%, 60%)` 
-    : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
-
-  let vx = 0; 
-  let vy = 1; // Tombent par défaut
-
-  if (score >= 5000) {
-    // LE BAZAR : Diagonales aléatoires
-    vx = (Math.random() - 0.5) * 5;
-    vy = (Math.random() - 0.5) * 5;
-  } 
-  else if (score >= 3000) {
-    // GAUCHE / DROITE : Vitesse horizontale activée
-    vx = (Math.random() < 0.5 ? -2 : 2);
-  }
-  // Note: vy est multiplié par 'vel' dans animate()
-
-  obstacles.push({
-    x: Math.random() * (window.innerWidth < 500 ? 300 : 400), // Ajusté au canvas
-    y: -sz - 10,
-    size: sz,
-    type, color, vx, vy,
-    fast: Math.random() < 0.15,
-    hasRing: type === 'planet' && Math.random() > 0.55
-  });
+// ==========================================
+// 3. AFFICHAGE DES ÉCRANS DU JEU ET CODE MDN
+// ==========================================
+function showScreen(screenId) {
+  document.getElementById('game-title-screen').style.display = screenId === 'title' ? 'flex' : 'none';
+  document.getElementById('game-canvas-wrap').style.display = screenId === 'play' ? 'flex' : 'none';
+  document.getElementById('game-hud').style.display = screenId === 'play' ? 'flex' : 'none';
+  document.getElementById('game-over-screen').style.display = screenId === 'gameover' ? 'flex' : 'none';
 }
 
-// --- 4. LOGIQUE DE MOUVEMENT (CLAVIER ET TACTILE LARGE) ---
+function openGame() {
+  document.getElementById('game-overlay').style.display = 'flex';
+  showScreen('title');
+  // Charge l'historique Firebase si la fonction existe (dans le script de type module)
+  if (typeof window.loadLeaderboard === 'function') {
+    window.loadLeaderboard();
+  }
+}
+
+function closeGame() {
+  document.getElementById('game-overlay').style.display = 'none';
+  gameActive = false;
+  cancelAnimationFrame(animId);
+  clearInterval(spawnInterval);
+}
+
+// Le code secret "mdn"
+let inputBuffer = "";
+window.addEventListener("keydown", (e) => {
+  // On n'écoute le code que si le jeu n'est pas déjà ouvert
+  if (document.getElementById('game-overlay').style.display !== 'flex') {
+    inputBuffer += e.key.toLowerCase();
+    if (inputBuffer.length > 3) inputBuffer = inputBuffer.substring(inputBuffer.length - 3);
+    
+    if (inputBuffer === "mdn") {
+      openGame();
+      inputBuffer = ""; // Reset après activation
+    }
+  }
+});
+
+// ==========================================
+// 4. CONTRÔLES DU JOUEUR (TACTILE + CLAVIER)
+// ==========================================
 function handleMove(direction) {
-  if (!gameActive) return;
+  if (!gameActive || !player) return;
   const step = 28;
+  
   if (direction === 'left') {
     player.x = Math.max(0, player.x - step);
   } else {
     player.x = Math.min(canvas.width - player.w, player.x + step);
   }
-  // Son de mouvement
-  const s = sounds.move.cloneNode();
-  s.volume = 0.3;
-  s.play();
+
+  if(sounds.move) {
+    const s = sounds.move.cloneNode();
+    s.volume = 0.3;
+    s.play().catch(e=>console.log("Son bloqué par le navigateur"));
+  }
 }
 
-// Écouteur Clavier (Unique)
-window.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") handleMove('left');
-  if (e.key === "ArrowRight") handleMove('right');
-});
-
-// Écouteur Tactile (Écran large pour tablette)
+// Écouteur Tactile pour Tablette (Moitié gauche / Moitié droite de l'écran entier)
 window.addEventListener("touchstart", (e) => {
   if (!gameActive) return;
   const touchX = e.touches[0].clientX;
@@ -1549,82 +1564,153 @@ window.addEventListener("touchstart", (e) => {
   if (touchX < screenWidth / 2) handleMove('left');
   else handleMove('right');
 
-  if (e.cancelable) e.preventDefault(); // Bloque le zoom tablette
+  // Empêche le zoom/sélection sur tablette
+  if (e.cancelable) e.preventDefault();
 }, { passive: false });
 
-// --- 5. BOUCLE D'ANIMATION PRINCIPALE ---
+// Écouteur Clavier
+window.addEventListener("keydown", (e) => {
+  if (!gameActive) return;
+  if (e.key === "ArrowLeft") handleMove('left');
+  if (e.key === "ArrowRight") handleMove('right');
+});
+
+// ==========================================
+// 5. MÉCANIQUE DU JEU (SPAWN & ANIMATION)
+// ==========================================
+function spawnObstacle() {
+  const sz = 30 + Math.random() * 25;
+  const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
+  const color = type === 'planet' 
+    ? `hsl(${Math.random() * 360}, 50%, 60%)` 
+    : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
+
+  let vx = 0; 
+  let vy = 1; // Tombent par défaut avant 1000
+
+  // Les phases de difficulté
+  if (score >= 5000) {
+    vx = (Math.random() - 0.5) * 5;
+    vy = (Math.random() - 0.5) * 5;
+    if (Math.abs(vy) < 0.5) vy = 1; // Anti sur-place
+  } 
+  else if (score >= 3000) {
+    vx = (Math.random() < 0.5 ? -2 : 2); // Droite ou gauche
+    vy = 1.2;
+  }
+  else if (score >= 1000) {
+    vx = 0;
+    vy = 1.5;
+  }
+
+  obstacles.push({
+    x: Math.random() * (canvas.width - sz),
+    y: -sz - 10,
+    size: sz,
+    type, color, vx, vy,
+    fast: Math.random() < 0.15,
+    hasRing: type === 'planet' && Math.random() > 0.55
+  });
+}
+
+function startGame() {
+  showScreen('play');
+  canvas = document.getElementById("gameCanvas");
+  ctx = canvas.getContext("2d");
+
+  // Reset des variables
+  player = { x: canvas.width/2 - 15, y: canvas.height - 60, w: 30, h: 45 };
+  obstacles = [];
+  score = 0;
+  gameActive = true;
+
+  if(sounds.theme) sounds.theme.play().catch(e=>console.log(e));
+
+  // Lancement du spawn
+  clearInterval(spawnInterval);
+  spawnInterval = setInterval(() => { if(gameActive) spawnObstacle(); }, 800);
+
+  // Lancement de l'animation
+  cancelAnimationFrame(animId);
+  animate();
+}
+
 function animate() {
   if (!gameActive) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // Vitesse évolutive
+  // Vitesse globale évolutive
   vel = score >= 1000 ? 4.5 + (score - 1000) / 160 : 2.8;
 
-  // Dessin Joueur (simplifié pour l'exemple)
+  // Dessin Joueur (Rectangle basique, à remplacer par ton image si tu en as une)
   ctx.fillStyle = "#7eb8f7";
   ctx.fillRect(player.x, player.y, player.w, player.h);
 
-  // Gestion Obstacles
-  obstacles.forEach((obs, i) => {
+  // Mise à jour des obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let obs = obstacles[i];
     const currentVel = obs.fast ? vel * 1.6 : vel;
+    
+    // Déplacement
     obs.x += obs.vx * currentVel;
     obs.y += obs.vy * currentVel;
 
-    // REBONDS SELON SCORE
-    if (score >= 1000) {
-      if (obs.y >= canvas.height || (score < 3000 && obs.y <= -obs.size)) obs.vy *= -1;
+    // Phase 2 (1000 à 3000) : Yoyo vertical
+    if (score >= 1000 && score < 3000) {
+      if (obs.y >= canvas.height - obs.size || obs.y <= 0) obs.vy *= -1;
     }
+    // Phase 3 (3000) : Rebond sur les côtés et vertical
     if (score >= 3000) {
       if (obs.x <= 0 || obs.x >= canvas.width - obs.size) obs.vx *= -1;
+      if (obs.y >= canvas.height - obs.size || obs.y <= 0) obs.vy *= -1;
+    }
+    // Phase 4 (5000) : Chaos (Maintien des rebonds)
+    if (score >= 5000) {
+      if (obs.y <= 0) obs.vy = Math.abs(obs.vy);
+      if (obs.y >= canvas.height - obs.size) obs.vy = -Math.abs(obs.vy);
     }
 
-    // Dessin Obstacle
+    // Dessin des obstacles
     ctx.fillStyle = obs.color;
     ctx.beginPath();
     ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI*2);
     ctx.fill();
 
-    // Collision
-    if (player.x < obs.x + obs.size && player.x + player.w > obs.x &&
-        player.y < obs.y + obs.size && player.y + player.h > obs.y) {
+    // Hitbox (Collisions)
+    const margin = 4;
+    if (player.x + margin < obs.x + obs.size - margin &&
+        player.x + player.w - margin > obs.x + margin &&
+        player.y + margin < obs.y + obs.size - margin &&
+        player.y + player.h - margin > obs.y + margin) {
       gameOver();
     }
 
-    // Nettoyage (si sort par le bas sans rebond)
-    if (score < 1000 && obs.y > canvas.height + 50) obstacles.splice(i, 1);
-  });
+    // Nettoyage : Si on est avant 1000 et qu'elle sort en bas, on la supprime
+    if (score < 1000 && obs.y > canvas.height + 50) {
+      obstacles.splice(i, 1);
+    }
+  }
 
-  score++;
-  document.getElementById('hud-score').innerText = Math.floor(score);
+  // Incrémentation du score
+  score += 1;
+  const hudScore = document.getElementById('hud-score'); // Assure-toi que cet ID existe dans ton HUD
+  if(hudScore) hudScore.innerText = Math.floor(score);
+  
   animId = requestAnimationFrame(animate);
-}
-
-// --- 6. COMMANDES DE JEU ---
-function startGame() {
-  gameActive = true;
-  score = 0;
-  obstacles = [];
-  canvas = document.getElementById("gameCanvas");
-  ctx = canvas.getContext("2d");
-  player = { x: canvas.width / 2 - 15, y: canvas.height - 70, w: 30, h: 45 };
-  
-  document.getElementById('game-title-screen').style.display = 'none';
-  document.getElementById('game-canvas-wrap').style.display = 'flex';
-  document.getElementById('game-hud').style.display = 'flex';
-  
-  // Interval de spawn
-  setInterval(() => { if(gameActive) spawnObstacle(); }, 800);
-  animate();
 }
 
 function gameOver() {
   gameActive = false;
+  clearInterval(spawnInterval);
   cancelAnimationFrame(animId);
-  alert("Game Over ! Score : " + score);
-  location.reload(); // Simple pour reset
+  
+  showScreen('gameover');
+  
+  const finalScoreEl = document.getElementById('game-final-score');
+  if(finalScoreEl) finalScoreEl.innerText = Math.floor(score);
 }
-</script>
 
+	</script>
 
 
 
