@@ -1751,8 +1751,10 @@ function spawnObstacle() {
 }
 	
 // --- BOUCLE DE JEU ---
-function animate() {
+function animate(timestamp) {
   if (!gameActive) return;
+  const delta = Math.min((timestamp - (animate._last || timestamp)) / 16.67, 3);
+  animate._last = timestamp;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Fond dégradé
@@ -1866,10 +1868,9 @@ window._gameScore = score;
     }
   }
 // Mouvement clavier fluide 
-const spd = 1;
+const spd = 3 * delta;
 if (keys["ArrowLeft"])  player.x = Math.max(0, player.x - spd);
 if (keys["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + spd);
-
 // Mouvement tactile fluide
 if (touchTargetX !== null) {
   const canvasRect = canvas.getBoundingClientRect();
