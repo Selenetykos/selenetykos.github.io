@@ -1568,7 +1568,111 @@ function animate() {
   animId = requestAnimationFrame(animate);
 }
 
-function openGame() { document.getElementById('game-overlay').style.display = 'flex'; showScreen('title'); }
+// === UTILS ===
+function getWeekNumber(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return { week: Math.ceil(((d - yearStart) / 86400000 + 1) / 7), year: d.getUTCFullYear() };
+}
+function weekKey(w) { return `week-${w.year}-${String(w.week).padStart(2, '0')}`; }
+
+// === ROTATION HEBDO ===
+async function checkWeekReset() {
+  const current = getWeekNumber();
+  const ck = weekKey(current);
+  try {
+    const lastWeekItem = await window.storage.get('meta:lastWeek', true).catch(() => null);
+    const lastWeek = lastWeekItem ? JSON.parse(lastWeekItem.value) : null;
+    if (lastWeek && weekKey(lastWeek) !== ck) {
+      const result = await window.storage.list(`scores:${weekKey(lastWeek)}:`, true).catch(() => null);
+      if (result && result.keys.length > 0) {
+        const entries = [];
+        for (const key of result.keys) {
+          const item = await window.storage.get(key, true).catch(() => null);
+          if (item) entries.push(JSON.parse(item.value));
+        }
+        entries.sort((a, b) => b.score - a.score);
+        const top3 = entries.slice(0, 3);
+        await window.storage.set(`history:${weekKey(lastWeek)}`, JSON.stringify({ week: lastWeek.week, year: lastWeek.year, label: `Semaine ${lastWeek.week} — ${lastWeek.year}`, top3 }), true);
+        for (const key of result.keys) await window.storage.delete(key, true).catch(() => {});
+      }
+    }
+    await window.storage.set('meta:lastWeek', JSON.stringify(current), true);
+  } catch (e) { console.warn('checkWeekReset error:', e); }
+}
+
+// === LEADERBOARD ===
+async function loadLeaderboard() {
+  const lbList = document.getElementById('lb-list');
+  try {
+    const ck = weekKey(getWeekNumber());
+    const result = await window.storage.list(`scores:${ck}:`, true).catch(() => null);
+    if (!result || result.keys.length === 0) { lbList.innerHTML = '<div class="lb-loading">Aucun score cette semaine.</div>'; return; }
+    const entries = [];
+    for (const key of result.keys) {
+      const item = await window.storage.get(key, true).catch(() => null);
+      if (item) entries.push(JSON.parse(item.value));
+    }
+    entries.sort((a, b) => b.score - a.score);
+    const medals = ['🥇', '🥈', '🥉'];
+    lbList.innerHTML = entries.slice(0, 10).map((e, i) => `
+      <div style="display:flex; justify-content:space-between; padding:6px 4px; border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span>${medals[i] || `${i+1}.`} ${e.pseudo}</span>
+        <span style="color:var(--accent)">${Math.floor(e.score)}</span>
+      </div>`).join('');
+  } catch (e) { lbList.innerHTML = '<div class="lb-loading">Erreur de chargement.</div>'; }
+}
+
+// === SAVE SCORE ===
+async function saveScore() {
+  const pseudo = document.getElementById('pseudo-input').value.trim();
+  const feedback = document.getElementById('save-feedback');
+  if (!pseudo) { feedback.textContent = '⚠️ Entre un pseudo !'; return; }
+  const score = window._gameScore || 0;
+  const current = getWeekNumber();
+  const entry = { pseudo, score, date: new Date().toISOString(), week: current.week, year: current.year };
+  const key = `scores:${weekKey(current)}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  try {
+    await window.storage.set(key, JSON.stringify(entry), true);
+    feedback.textContent = '✅ Score sauvegardé !';
+    document.getElementById('save-score-btn').disabled = true;
+  } catch (e) { feedback.textContent = '❌ Erreur de sauvegarde.'; }
+}
+
+// === HISTORIQUE ===
+async function openHistory() {
+  showScreen('history');
+  const histList = document.getElementById('history-list');
+  histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Chargement…</div>';
+  try {
+    const result = await window.storage.list('history:', true).catch(() => null);
+    if (!result || result.keys.length === 0) { histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Aucune semaine archivée pour l\'instant.</div>'; return; }
+    const archives = [];
+    for (const key of result.keys) {
+      const item = await window.storage.get(key, true).catch(() => null);
+      if (item) archives.push(JSON.parse(item.value));
+    }
+    archives.sort((a, b) => b.year !== a.year ? b.year - a.year : b.week - a.week);
+    const medals = ['🥇', '🥈', '🥉'];
+    histList.innerHTML = archives.map(arch => `
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'Orbitron',monospace; font-size:0.75rem; color:var(--accent); margin-bottom:6px; letter-spacing:0.1em;">🗓️ ${arch.label}</div>
+        ${arch.top3.map((e, i) => `
+          <div style="display:flex; justify-content:space-between; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:4px; margin-bottom:3px;">
+            <span>${medals[i]} ${e.pseudo}</span>
+            <span style="color:var(--accent); font-family:'Orbitron',monospace;">${Math.floor(e.score)}</span>
+          </div>`).join('')}
+      </div>`).join('');
+  } catch (e) { histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Erreur.</div>'; }
+}
+
+// === OPEN / CLOSE ===
+function openGame() {
+  document.getElementById('game-overlay').style.display = 'flex';
+  showScreen('title');
+  checkWeekReset().then(() => loadLeaderboard());
+}
 function closeGame() { gameActive = false; sounds.theme.pause(); document.getElementById('game-overlay').style.display = 'none'; }
 let seq = ""; window.addEventListener("keydown", (e) => { seq += e.key.toLowerCase(); if (seq.endsWith("mdn")) openGame(); });
 </script>
