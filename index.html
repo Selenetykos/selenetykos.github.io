@@ -800,6 +800,55 @@
   touch-action: none;
 }
 
+	  .morse-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.morse-lamp {
+  width: 12px;
+  height: 12px;
+  background-color: #333; /* Couleur éteinte */
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  animation: blinkMorse 8s infinite; /* Boucle de 8 secondes */
+}
+
+.morse-text {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 227, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@keyframes blinkMorse {
+  /* Éteint au début */
+  0%, 5%, 100% { background-color: #333; box-shadow: none; }
+  
+  /* M: -- (Traits longs) */
+  7%, 12% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Trait 1 */
+  13%, 15% { background-color: #333; } 
+  17%, 22% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Trait 2 */
+  23%, 28% { background-color: #333; }
+
+  /* D: -.. (Trait, Point, Point) */
+  30%, 35% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Trait */
+  36%, 38% { background-color: #333; }
+  40%, 42% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Point */
+  43%, 45% { background-color: #333; }
+  47%, 49% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Point */
+  50%, 55% { background-color: #333; }
+
+  /* N: -. (Trait, Point) */
+  57%, 62% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Trait */
+  63%, 65% { background-color: #333; }
+  67%, 69% { background-color: #f87171; box-shadow: 0 0 15px #f87171; } /* Point */
+  70%, 100% { background-color: #333; }
+}
+
   </style>
 </head>
 <body>
@@ -872,6 +921,11 @@
       <div class="ai-dot"></div>
       <div class="ai-title">Liren IA</div>
     </div>
+
+	  <div class="morse-container">
+  <span class="morse-lamp"></span>
+  <span class="morse-text">Signal de mission</span>
+</div>
 
     <div class="suggestions">
       <button class="sugg-btn" onclick="sendSuggestion(this)">C'est quoi la Lune ?</button>
