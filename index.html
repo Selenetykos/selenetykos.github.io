@@ -915,6 +915,79 @@
   </footer>
 </div>
 
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
+    authDomain: "selenetykos-63361.firebaseapp.com",
+    projectId: "selenetykos-63361",
+    storageBucket: "selenetykos-63361.firebasestorage.app",
+    messagingSenderId: "284139581187",
+    appId: "1:284139581187:web:86c38f70b37cebcfae8336"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // === SHIM window.storage → Firestore ===
+  // Les clés sont de type "collection/docId" ou "prefix:suffix"
+  // On stocke tout dans une collection "storage" avec des docs dont l'id est la clé (: remplacés par _)
+
+  function keyToDocId(key) {
+    // Firestore n'accepte pas les ":" dans les IDs de document
+    return key.replace(/:/g, '__COLON__');
+  }
+
+  window.storage = {
+    async get(key, shared = false) {
+      try {
+        const docId = keyToDocId(key);
+        const ref = doc(db, 'storage', docId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return null;
+        return { key, value: snap.data().value, shared };
+      } catch (e) { console.warn('storage.get error', e); return null; }
+    },
+
+    async set(key, value, shared = false) {
+      try {
+        const docId = keyToDocId(key);
+        const ref = doc(db, 'storage', docId);
+        await setDoc(ref, { value, key, shared, updatedAt: Date.now() });
+        return { key, value, shared };
+      } catch (e) { console.warn('storage.set error', e); return null; }
+    },
+
+    async delete(key, shared = false) {
+      try {
+        const docId = keyToDocId(key);
+        const ref = doc(db, 'storage', docId);
+        await deleteDoc(ref);
+        return { key, deleted: true, shared };
+      } catch (e) { console.warn('storage.delete error', e); return null; }
+    },
+
+    async list(prefix = '', shared = false) {
+      try {
+        const col = collection(db, 'storage');
+        const snap = await getDocs(col);
+        const prefixEncoded = keyToDocId(prefix);
+        const keys = [];
+        snap.forEach(d => {
+          const originalKey = d.data().key || d.id.replace(/__COLON__/g, ':');
+          if (originalKey.startsWith(prefix)) keys.push(originalKey);
+        });
+        return { keys, prefix, shared };
+      } catch (e) { console.warn('storage.list error', e); return null; }
+    }
+  };
+
+  console.log('✅ Firebase + window.storage shim initialisé');
+</script>
+
 <script>
   /* ── LOADER ── */
   window.addEventListener('load', () => {
@@ -1589,6 +1662,7 @@ async function checkWeekReset() {
       if (result && result.keys.length > 0) {
         const entries = [];
         for (const key of result.keys) {
+          if (key.includes(':pseudo:')) continue; // clés d'index, pas de données
           const item = await window.storage.get(key, true).catch(() => null);
           if (item) entries.push(JSON.parse(item.value));
         }
@@ -1611,6 +1685,8 @@ async function loadLeaderboard() {
     if (!result || result.keys.length === 0) { lbList.innerHTML = '<div class="lb-loading">Aucun score cette semaine.</div>'; return; }
     const entries = [];
     for (const key of result.keys) {
+      // On ignore les clés d'index pseudo (scores:ck:pseudo:xxx)
+      if (key.includes(':pseudo:')) continue;
       const item = await window.storage.get(key, true).catch(() => null);
       if (item) entries.push(JSON.parse(item.value));
     }
@@ -1631,13 +1707,38 @@ async function saveScore() {
   if (!pseudo) { feedback.textContent = '⚠️ Entre un pseudo !'; return; }
   const score = window._gameScore || 0;
   const current = getWeekNumber();
-  const entry = { pseudo, score, date: new Date().toISOString(), week: current.week, year: current.year };
-  const key = `scores:${weekKey(current)}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ck = weekKey(current);
+
+  feedback.textContent = '⏳ Vérification…';
+
   try {
-    await window.storage.set(key, JSON.stringify(entry), true);
-    feedback.textContent = '✅ Score sauvegardé !';
+    // Cherche si ce pseudo existe déjà cette semaine
+    const pseudoKey = `scores:${ck}:pseudo:${pseudo.toLowerCase()}`;
+    const existing = await window.storage.get(pseudoKey, true).catch(() => null);
+
+    if (existing) {
+      const existingEntry = JSON.parse(existing.value);
+      if (score <= existingEntry.score) {
+        feedback.textContent = `❌ "${pseudo}" a déjà ${Math.floor(existingEntry.score)} pts cette semaine. Fais mieux !`;
+        return;
+      }
+      // Score plus haut : on supprime l'ancienne entrée "data" avant de la remplacer
+      await window.storage.delete(existingEntry.dataKey, true).catch(() => {});
+    }
+
+    // Clé unique pour la data (pour loadLeaderboard qui liste par préfixe scores:ck:)
+    const dataKey = `scores:${ck}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const entry = { pseudo, score, date: new Date().toISOString(), week: current.week, year: current.year, dataKey };
+
+    // Sauvegarde la data + l'index pseudo
+    await window.storage.set(dataKey, JSON.stringify(entry), true);
+    await window.storage.set(pseudoKey, JSON.stringify(entry), true);
+
+    feedback.textContent = existing
+      ? `🔝 Nouveau record pour "${pseudo}" : ${Math.floor(score)} pts !`
+      : '✅ Score sauvegardé !';
     document.getElementById('save-score-btn').disabled = true;
-  } catch (e) { feedback.textContent = '❌ Erreur de sauvegarde.'; }
+  } catch (e) { feedback.textContent = '❌ Erreur de sauvegarde.'; console.warn(e); }
 }
 
 // === HISTORIQUE ===
@@ -1668,10 +1769,21 @@ async function openHistory() {
 }
 
 // === OPEN / CLOSE ===
+async function waitForStorage(maxMs = 5000) {
+  const start = Date.now();
+  while (!window.storage) {
+    if (Date.now() - start > maxMs) throw new Error('Firebase storage non initialisé');
+    await new Promise(r => setTimeout(r, 50));
+  }
+}
+
 function openGame() {
   document.getElementById('game-overlay').style.display = 'flex';
   showScreen('title');
-  checkWeekReset().then(() => loadLeaderboard());
+  waitForStorage()
+    .then(() => checkWeekReset())
+    .then(() => loadLeaderboard())
+    .catch(e => console.warn('openGame init error:', e));
 }
 function closeGame() { gameActive = false; sounds.theme.pause(); document.getElementById('game-overlay').style.display = 'none'; }
 let seq = ""; window.addEventListener("keydown", (e) => { seq += e.key.toLowerCase(); if (seq.endsWith("mdn")) openGame(); });
