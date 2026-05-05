@@ -1532,7 +1532,7 @@ window.addEventListener('load', () => {
   const canvas = document.getElementById("gameCanvas");
   if (!canvas) return;
 
-  let touchTargetX = null;
+
 
 canvas.addEventListener("touchstart", (e) => {
   if (!gameActive) return;
@@ -1549,8 +1549,10 @@ canvas.addEventListener("touchmove", (e) => {
 canvas.addEventListener("touchend", () => {
   touchTargetX = null;
 });
+});
 // --- STATE ---
 let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
+let touchTargetX = null;
 
 function openGame() {
   document.getElementById('game-overlay').style.display = 'flex';
