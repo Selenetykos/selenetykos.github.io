@@ -849,6 +849,12 @@
   70%, 100% { background-color: #333; }
 }
 
+
+	  #cookie-banner {
+  /* ... tes réglages actuels ... */
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
   </style>
 </head>
 <body>
@@ -1627,7 +1633,25 @@ function openGame() { document.getElementById('game-overlay').style.display = 'f
 function closeGame() { gameActive = false; sounds.theme.pause(); document.getElementById('game-overlay').style.display = 'none'; }
 let seq = ""; window.addEventListener("keydown", (e) => { seq += e.key.toLowerCase(); if (seq.endsWith("mdn")) openGame(); });
 </script>
-	
+
+	<script>
+function refuseCookies() {
+  const banner = document.getElementById('cookie-banner');
+  if (banner) {
+    banner.style.display = 'none';
+  }
+  // Optionnel : on peut enregistrer le choix pour ne plus l'afficher
+  localStorage.setItem('cookies-refused', 'true');
+}
+
+// Pour éviter que la bannière revienne à chaque actualisation si l'utilisateur a refusé
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('cookies-refused') === 'true') {
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.style.display = 'none';
+  }
+});
+	</script>
 </body>
 	
 </html>
