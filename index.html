@@ -1321,9 +1321,9 @@ window.addEventListener('load', () => {
 </script>		
 
 	
-	<div id="game-overlay">
+<div id="game-overlay">
   <button id="game-close-btn" onclick="closeGame()">✕ Quitter</button>
-
+  
   <div id="game-hud">
     <div class="hud-item">Score<span class="hud-val" id="hud-score">0</span></div>
     <div class="hud-item" style="text-align:center;">
@@ -1332,29 +1332,35 @@ window.addEventListener('load', () => {
     </div>
   </div>
 
-
-  <!-- Écran titre -->
   <div id="game-title-screen">
     <div style="font-size:2.2rem; margin-bottom:4px;">🚀</div>
     <h2>Mission Selenetykos</h2>
     <p>Pilotez la fusée · Évitez les astéroïdes</p>
-    <p style="font-size:0.78rem;">Touches ← → pour manœuvrer</p>
+    
+    <button class="game-btn" onclick="openHistory()" style="background:rgba(255,255,255,0.1); margin-top:10px; border:1px solid rgba(255,255,255,0.2);">📜 Historique</button>
+    
+    <p style="font-size:0.78rem; margin-top:15px;">Touches ← → pour manœuvrer</p>
 
     <div id="game-leaderboard">
-      <div class="lb-title">🏆 Meilleurs pilotes</div>
+      <div class="lb-title">🏆 Classement Hebdo</div>
       <div id="lb-list"><div class="lb-loading">Chargement…</div></div>
     </div>
 
-    <button class="game-btn" onclick="startGame()" style="margin-top:4px;">Lancer la mission</button>
+    <button class="game-btn" onclick="startGame()" style="margin-top:10px;">Lancer la mission</button>
   </div>
 
-  <!-- Canvas de jeu -->
+  <div id="game-history-screen" style="display:none; flex-direction:column; align-items:center; width:100%; height:100%; padding:20px; box-sizing:border-box;">
+    <div style="font-size:2rem; margin-bottom:10px;">🏛️</div>
+    <h3 style="margin-bottom:20px;">Panthéon des Pilotes</h3>
+    <div id="history-list" style="width:100%; flex-grow:1; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px;"></div>
+    <button class="game-btn" onclick="showScreen('title')" style="margin-top:20px; width:auto; padding:10px 40px;">Retour</button>
+  </div>
+
   <div id="game-canvas-wrap">
     <canvas id="gameCanvas" width="420" height="580"></canvas>
     <div id="game-hint">← → pour manœuvrer</div>
   </div>
 
-  <!-- Écran Game Over -->
   <div id="game-over-screen">
     <div style="font-size:2.2rem;">💥</div>
     <h3>Vaisseau perdu dans l'espace</h3>
@@ -1374,8 +1380,7 @@ window.addEventListener('load', () => {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
@@ -1388,576 +1393,229 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
-const SCORES_COL = "scores";
-const LB_MAX = 8;
 
-window._fbReady = true;
-
+// --- LOGIQUE FIREBASE ---
 window.loadLeaderboard = async function() {
   const el = document.getElementById('lb-list');
-  if (!el) return;
-  el.innerHTML = '<div class="lb-loading">Chargement…</div>';
+  if(!el) return;
   try {
-    const q = query(collection(db, SCORES_COL), orderBy("score", "desc"), limit(LB_MAX));
+    const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(8));
     const snap = await getDocs(q);
-    const entries = snap.docs.map(d => d.data());
-    window.renderLeaderboard(entries);
-  } catch(e) {
-    el.innerHTML = '<div class="lb-empty">Impossible de charger les scores.</div>';
-    console.error(e);
-  }
+    el.innerHTML = snap.docs.map((d, i) => {
+        const e = d.data();
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
+        return `<div class="lb-row"><span class="lb-rank">${medal}</span><span class="lb-name">${e.name}</span><span class="lb-score">${Math.floor(e.score)}</span></div>`;
+    }).join('') || '<div class="lb-empty">Aucun score</div>';
+  } catch(e) { console.error(e); }
 };
 
 window.saveScore = async function() {
-  const nameInput = document.getElementById('pseudo-input');
-  const btn = document.getElementById('save-score-btn');
+  const input = document.getElementById('pseudo-input');
   const feedback = document.getElementById('save-feedback');
-  const name = nameInput.value.trim().substring(0, 16);
+  const name = input.value.trim().substring(0, 16);
+  if (!name) { feedback.textContent = "Pseudo requis !"; return; }
   
-  if (!name) { 
-    feedback.textContent = "Entre ton pseudo d'abord !"; 
-    feedback.style.color = "#f87171";
-    return; 
-  }
-
-  btn.disabled = true;
-  feedback.textContent = 'Vérification...';
-  feedback.style.color = 'var(--accent)';
-
   try {
     const finalScore = Math.floor(window._gameScore || 0);
-    const q = query(collection(db, SCORES_COL), where("name", "==", name));
+    const q = query(collection(db, "scores"), where("name", "==", name));
     const existing = await getDocs(q);
-    
-    let bestPrev = -1;
-    let existingDocId = null;
+    let best = -1;
+    existing.forEach(d => { if(d.data().score > best) best = d.data().score; });
 
-    existing.forEach(d => {
-      if (d.data().score > bestPrev) {
-        bestPrev = d.data().score;
-        existingDocId = d.id;
-      }
-    });
-
-    if (bestPrev !== -1 && finalScore <= bestPrev) {
-      feedback.textContent = `🌙 Record : ${bestPrev}. Fais mieux !`;
-      feedback.style.color = '#fbbf24'; 
-      btn.disabled = false;
-      return; 
+    if (best !== -1 && finalScore <= best) {
+      feedback.textContent = `Ton record est de ${best}`;
+      return;
     }
-
-    feedback.textContent = 'Enregistrement...';
-    if(window.sounds && window.sounds.success) window.sounds.success.play();
-
-    if (existingDocId) {
-      for (const d of existing.docs) {
-        await deleteDoc(doc(db, SCORES_COL, d.id));
-      }
-    }
-
-    await addDoc(collection(db, SCORES_COL), { 
-      name: name, 
-      score: finalScore, 
-      date: Date.now() 
-    });
-
-    feedback.textContent = '✓ Record pulvérisé !';
-    feedback.style.color = '#4ade80'; 
-    nameInput.value = '';
+    for (const d of existing.docs) { await deleteDoc(doc(db, "scores", d.id)); }
+    await addDoc(collection(db, "scores"), { name, score: finalScore, date: Date.now() });
+    feedback.textContent = "✓ Record battu !";
     window.loadLeaderboard();
-    
-  } catch(e) {
-    feedback.textContent = 'Erreur de connexion.';
-    feedback.style.color = '#f87171';
-    btn.disabled = false;
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 };
 
-	
+window.openHistory = async function() {
+    showScreen('history');
+    const el = document.getElementById('history-list');
+    el.innerHTML = "Chargement...";
+    const q = query(collection(db, "archives"), orderBy("timestamp", "desc"), limit(10));
+    const snap = await getDocs(q);
+    el.innerHTML = snap.docs.map(doc => {
+        const d = doc.data();
+        return `<div style="border-bottom:1px solid rgba(255,255,255,0.1); padding:10px;">
+            <div style="color:var(--accent); font-size:0.7rem;">SEMAINE ${d.week}</div>
+            ${d.winners.map(w => `<div>${w.name}: ${Math.floor(w.score)}</div>`).join('')}
+        </div>`;
+    }).join('') || "Archives vides.";
+};
+
+window.loadLeaderboard();
 </script>
 
 <script>
+// --- ENGINE GRAPHIQUE HD ---
+const sounds = { theme: new Audio('theme.mp3'), dead: new Audio('dead.mp3') };
+sounds.theme.loop = true;
 
-// --- SYSTÈME AUDIO ---
-const sounds = {
-  theme: new Audio('theme.mp3'),
-  move: new Audio('move.mp3'),
-  click: new Audio('click.mp3'),
-  success: new Audio('success.mp3'),
-  dead: new Audio('dead.mp3')	
-};
+let canvas, ctx, player, obstacles, stars, score, gameActive, animId;
+let rocketBodyGrad, rocketTipGrad;
+const keys = {};
 
-// Configuration de la musique d'ambiance
-sounds.theme.loop = true; // Pour que la musique recommence à la fin
-sounds.theme.volume = 0.5; // Volume à 50%
-	
-// --- SYSTÈME DE TOUCHES SECRÈTES UNIVERSEL ---
-let inputSequence = "";
-const secretCode = "mdn";
-
-// 1. Pour l'ordinateur (clavier physique)
-window.addEventListener("keydown", (e) => {
-  if (window.gameActive) return;
-  inputSequence += e.key.toLowerCase();
-  if (inputSequence.length > secretCode.length) inputSequence = inputSequence.substring(1);
-  if (inputSequence === secretCode) {
-    openGame();
-    inputSequence = "";
-  }
-});
-
-// 2. Pour ton Android (via le chat de LIREN)
-// On attend que la page soit chargée pour trouver l'input du chat
+// MOBILE & INPUT SITE (CHOCOLAT)
 window.addEventListener('load', () => {
-  const chatInput = document.getElementById('chat-input');
-  if (chatInput) {
-    chatInput.addEventListener('input', () => {
-      let val = chatInput.value.toLowerCase();
-      // Si "mdn" est tapé dans la barre de recherche
-      if (val.includes(secretCode)) {
-        openGame();
-        chatInput.value = ""; // On efface le code pour que ça reste secret
-        chatInput.blur();    // On range le clavier
+  const cv = document.getElementById("gameCanvas");
+  if (!cv) return;
+  
+  // Tactile : déplacement fluide
+  cv.addEventListener("touchstart", (e) => {
+    if (!gameActive) return;
+    const touchX = e.touches[0].clientX;
+    if (touchX < window.innerWidth / 2) keys["ArrowLeft"] = true;
+    else keys["ArrowRight"] = true;
+  }, { passive: false });
+  
+  cv.addEventListener("touchend", () => {
+    keys["ArrowLeft"] = false;
+    keys["ArrowRight"] = false;
+  });
+
+  // Détection MDN sur l'input du site
+  const siteInput = document.getElementById('chat-input') || document.querySelector('input[type="text"]');
+  if (siteInput) {
+    siteInput.addEventListener('input', () => {
+      if (siteInput.value.toLowerCase().includes('mdn')) {
+        siteInput.value = ""; siteInput.blur(); openGame();
       }
     });
   }
 });
 
-	
-
-// --- COMMANDES TACTILES (Correction du bug de distance) ---
-// On l'initialise une seule fois ici, pas dans startGame
-window.addEventListener('load', () => {
-  const canvas = document.getElementById("gameCanvas");
-  if (!canvas) return;
-
-
-
-document.addEventListener("touchstart", (e) => {
-  if (!gameActive) return;
-  touchTargetX = e.touches[0].clientX;
-  e.preventDefault();
-}, { passive: false });
-
-document.addEventListener("touchmove", (e) => {
-  if (!gameActive) return;
-  touchTargetX = e.touches[0].clientX;
-  e.preventDefault();
-}, { passive: false });
-
-document.addEventListener("touchend", () => {
-  touchTargetX = null;
-});
-});
-// --- STATE ---
-let canvas, ctx, player, obstacles, stars2, score, gameActive, animId;
-let touchTargetX = null;
-
-function openGame() {
-  document.getElementById('game-overlay').style.display = 'flex';
-  showScreen('title');
-  if (window.loadLeaderboard) window.loadLeaderboard();
-}
-
-function closeGame() {
-  gameActive = false;
-  cancelAnimationFrame(animId);
-  document.getElementById('game-overlay').style.display = 'none';
-  showScreen('title');
-  inputSequence = "";
-  sounds.theme.pause();
-  sounds.theme.currentTime = 0;	
-	
-}
+window.addEventListener("keydown", (e) => keys[e.key] = true);
+window.addEventListener("keyup", (e) => keys[e.key] = false);
 
 function showScreen(name) {
   document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
   document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
   document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
-  document.getElementById('game-hud').style.display = name === 'play' ? 'flex' : 'none';
+  document.getElementById('game-history-screen').style.display = name === 'history' ? 'flex' : 'none';
+  document.getElementById('game-hud').style.display = (name === 'play' || name === 'over') ? 'flex' : 'none';
 }
 
 function startGame() {
-  sounds.theme.play();	
-  showScreen('play');
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
+  
+  // Préparation des dégradés HD
+  rocketBodyGrad = ctx.createLinearGradient(0, 0, 16, 0);
+  rocketBodyGrad.addColorStop(0, "#c8ccd8"); rocketBodyGrad.addColorStop(0.5, "#f0f2f7"); rocketBodyGrad.addColorStop(1, "#9aa0b0");
+  rocketTipGrad = ctx.createLinearGradient(0, 0, 16, 0);
+  rocketTipGrad.addColorStop(0, "#a78bfa"); rocketTipGrad.addColorStop(1, "#7eb8f7");
 
-  // Reset des variables
-  stars2 = Array.from({length: 80}, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 1.3 + 0.2,
-    speed: Math.random() * 1.5 + 0.5,
-  }));
-
-  player = { x: canvas.width/2 - 15, y: canvas.height - 90, w: 30, h: 50 };
-  obstacles = [];
-  score = 0;
-  gameActive = true;
-
-  // ON NE MET PLUS l'addEventListener ICI !
-  cancelAnimationFrame(animId);
+  score = 0; obstacles = []; gameActive = true;
+  player = { x: 195, y: 480, w: 30, h: 50 };
+  stars = Array.from({length: 80}, () => ({x: Math.random()*420, y: Math.random()*580, r: Math.random()*1.3+0.2, s: Math.random()*1.5+0.5}));
+  
+  sounds.dead.pause(); sounds.dead.currentTime = 0;
+  sounds.theme.play();
+  showScreen('play');
   animate();
 }
 
-function movePlayer(e) {
-  if (!gameActive) return;
-  const step = 28;
-  if (e.key === "ArrowLeft")  player.x = Math.max(0, player.x - step);
-  if (e.key === "ArrowRight") player.x = Math.min(canvas.width - player.w, player.x + step);
-    sounds.move.cloneNode().play();
-}
-
-// --- DESSIN FUSÉE ---
 function drawRocket(x, y) {
   const cx = x + 15;
+  // Flamme dynamique
+  const fH = 12 + Math.random() * 10;
+  const fG = ctx.createLinearGradient(cx, y+50, cx, y+50+fH);
+  fG.addColorStop(0, "rgba(255,160,0,0.9)"); fG.addColorStop(1, "transparent");
+  ctx.fillStyle = fG; ctx.beginPath(); ctx.moveTo(x+8, y+50); ctx.lineTo(x+22, y+50); ctx.lineTo(cx, y+50+fH); ctx.fill();
 
-  // Flamme
-  const flameH = 12 + Math.random() * 10;
-  const grad = ctx.createLinearGradient(cx, y + 50, cx, y + 50 + flameH);
-  grad.addColorStop(0, "rgba(255,200,50,0.95)");
-  grad.addColorStop(0.5, "rgba(255,90,10,0.7)");
-  grad.addColorStop(1, "rgba(255,50,0,0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.moveTo(x + 8, y + 50);
-  ctx.lineTo(x + 22, y + 50);
-  ctx.lineTo(cx, y + 50 + flameH);
-  ctx.closePath();
-  ctx.fill();
-
-  // Corps
-  const bodyGrad = ctx.createLinearGradient(x+7, 0, x+23, 0);
-  bodyGrad.addColorStop(0, "#c8ccd8");
-  bodyGrad.addColorStop(0.5, "#f0f2f7");
-  bodyGrad.addColorStop(1, "#9aa0b0");
-  ctx.fillStyle = bodyGrad;
-  ctx.beginPath();
-  ctx.roundRect(x + 7, y + 12, 16, 38, 2);
-  ctx.fill();
+  // Corps dégradé
+  ctx.save(); ctx.translate(x+7, y+12);
+  ctx.fillStyle = rocketBodyGrad; ctx.beginPath(); ctx.roundRect(0, 0, 16, 38, 2); ctx.fill(); ctx.restore();
 
   // Ailerons
   ctx.fillStyle = "#7eb8f7";
-  ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+7, y+38); ctx.lineTo(x+1, y+52); ctx.lineTo(x+7, y+50); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+23, y+38); ctx.lineTo(x+29, y+52); ctx.lineTo(x+23, y+50); ctx.fill();
 
-  // Pointe
-  const tipGrad = ctx.createLinearGradient(x+7, y+12, x+23, y+12);
-  tipGrad.addColorStop(0, "#a78bfa");
-  tipGrad.addColorStop(1, "#7eb8f7");
-  ctx.fillStyle = tipGrad;
-  ctx.beginPath();
-  ctx.moveTo(cx, y);
-  ctx.lineTo(x + 7, y + 12);
-  ctx.lineTo(x + 23, y + 12);
-  ctx.closePath();
-  ctx.fill();
+  // Tête dégradée
+  ctx.save(); ctx.translate(x+7, y);
+  ctx.fillStyle = rocketTipGrad; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(16, 12); ctx.fill(); ctx.restore();
 
-  // Hublot
-  ctx.fillStyle = "#00d4ff";
-  ctx.shadowColor = "#00d4ff";
-  ctx.shadowBlur = 6;
-  ctx.beginPath();
-  ctx.arc(cx, y + 22, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
+  // Hublot brillant
+  ctx.fillStyle = "#00d4ff"; ctx.shadowColor = "#00d4ff"; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.arc(cx, y+22, 4, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
 }
 
-// --- DESSIN OBSTACLE ---
-function drawObstacle(obs) {
-  ctx.save();
-  ctx.translate(obs.x + obs.size/2, obs.y + obs.size/2);
-  const r = obs.size / 2;
-
-  if (obs.type === 'planet') {
-    // Planète avec anneau possible
-    ctx.fillStyle = obs.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    if (obs.hasRing) {
-      ctx.strokeStyle = obs.color;
-      ctx.globalAlpha = 0.45;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.7, r * 0.35, 0.3, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+function drawObstacle(o) {
+  ctx.save(); ctx.translate(o.x, o.y);
+  // Corps de l'astre
+  ctx.fillStyle = o.color; ctx.beginPath(); ctx.arc(0, 0, o.r, 0, Math.PI*2); ctx.fill();
+  
+  if (o.type === 'planet') {
+    // Ombre propre
+    ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.arc(o.r*0.2, o.r*0.2, o.r, 0, Math.PI*2); ctx.fill();
+    // Anneaux transparents
+    if (o.ring) {
+      ctx.strokeStyle = o.color; ctx.globalAlpha = 0.3; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, 0, o.r*2, o.r*0.5, 0.4, 0, Math.PI*2); ctx.stroke();
     }
-    // Brillance
-    const gl = ctx.createRadialGradient(-r*0.35, -r*0.35, r*0.05, 0, 0, r);
-    gl.addColorStop(0, "rgba(255,255,255,0.35)");
-    gl.addColorStop(1, "rgba(0,0,0,0.5)");
-    ctx.fillStyle = gl;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
   } else {
-    // Astéroïde irrégulier
-    ctx.fillStyle = obs.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    // Cratères
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.beginPath(); ctx.arc(-r*0.3, -r*0.25, r*0.22, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(r*0.25, r*0.2, r*0.14, 0, Math.PI*2); ctx.fill();
-    // Highlight
-    ctx.fillStyle = "rgba(255,255,255,0.12)";
-    ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, r*0.18, 0, Math.PI*2); ctx.fill();
+    // Cratères astéroïdes
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
+    ctx.beginPath(); ctx.arc(-o.r*0.3, -o.r*0.2, o.r*0.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(o.r*0.4, o.r*0.3, o.r*0.15, 0, Math.PI*2); ctx.fill();
   }
   ctx.restore();
 }
 
-function spawnObstacle() {
-  const sz = 30 + Math.random() * 25;
-  const type = Math.random() > 0.8 ? 'planet' : 'asteroid';
-  const color = type === 'planet' 
-    ? `hsl(${Math.random() * 360}, 50%, 60%)` 
-    : `hsl(0, 0%, ${30 + Math.random() * 30}%)`;
-
-  let vx = 0; // Par défaut : pas de mouvement horizontal
-  let vy = 1; // Par défaut : tombe vers le bas
-
-  if (score >= 5000) {
-    // Mode Chaos total
-    vx = (Math.random() - 0.5) * 4;
-    vy = (Math.random() - 0.5) * 4;
-    if (Math.abs(vy) < 0.5) vy = 1; 
-  } 
-  else if (score >= 3000) {
-    // Mode Horizontal (Seulement à partir de 3000 !)
-    vx = (Math.random() - 0.5) * 2.5;
-  }
-
-  obstacles.push({
-    x: Math.random() * (canvas.width - sz),
-    y: -sz - 10,
-    size: sz,
-    type,
-    color,
-    vx: vx,
-    vy: vy,
-    fast: Math.random() < 0.15,
-    // On n'active le zigzag QUE si on est entre 1000 et 3000 pour éviter les bugs
-    zigzag: (score >= 1000 && score < 3000) && Math.random() < 0.3,
-    zigzagPhase: Math.random() * Math.PI * 2,
-    zigzagAmp: 1 + Math.random() * 2,
-    zigzagSpeed: 0.05 + Math.random() * 0.05,
-    hasRing: type === 'planet' && Math.random() > 0.55
-  });
-}
-	
-// --- BOUCLE DE JEU ---
-function animate(timestamp) {
+function animate() {
   if (!gameActive) return;
-  const delta = Math.min((timestamp - (animate._last || timestamp)) / 16.67, 3);
-  animate._last = timestamp;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Fond dégradé
-  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  bg.addColorStop(0, "#02020f");
-  bg.addColorStop(1, "#060618");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Étoiles défilantes
-  const speed = 1.5 + score / 300;
-  stars2.forEach(s => {
-    s.y += s.speed * (speed / 1.5);
-    if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
-    ctx.globalAlpha = 0.6 + Math.random() * 0.4;
-    ctx.fillStyle = "#fff8e0";
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-    ctx.fill();
+  // Fond espace profond
+  ctx.fillStyle = "#02020f"; ctx.fillRect(0, 0, 420, 580);
+  
+  stars.forEach(s => {
+    s.y += s.s * (1 + score/3000); if(s.y > 580) s.y = 0;
+    ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
   });
-  ctx.globalAlpha = 1;
 
-  // Fusée
+  if (keys["ArrowLeft"]) player.x = Math.max(0, player.x - 6);
+  if (keys["ArrowRight"]) player.x = Math.min(390, player.x + 6);
   drawRocket(player.x, player.y);
 
-  // ── Paramètres de difficulté ──
-  const hardMode = score >= 1000;
-  // Spawn : plus fréquent après 1000, avec un double-spawn possible
-  const spawnRate = hardMode ? 0.055 + Math.min(score / 8000, 0.03) : 0.032;
-  if (Math.random() < spawnRate) {
-    spawnObstacle();
-    // Double spawn après 2000
-    if (score > 2000 && Math.random() < 0.35) spawnObstacle();
+  let speed = score >= 5000 ? 7 : (score >= 1000 ? 4.5 : 3);
+  if (Math.random() < 0.035) {
+    obstacles.push({
+      x: Math.random()*420, y: -40, r: 15+Math.random()*15, 
+      color: `hsl(${Math.random()*360}, 40%, 45%)`,
+      type: Math.random()>0.8?'planet':'ast', ring: Math.random()>0.6
+    });
   }
 
-  // Vitesse : courbe douce avant 1000, puis nettement plus agressive
-  const vel = hardMode
-    ? 4.5 + (score - 1000) / 160
-    : 2.8 + score / 220;
-
-  obstacles.forEach((obs, i) => {
-    // Calcul de la vitesse de base (votre logique existante)
-    const currentVel = obs.fast ? vel * 1.9 : vel;
-
-    // Gestion des déplacements
-    if (score >= 5000) {
-        // Mode Diagonale / Aléatoire
-        obs.x += obs.vx * currentVel;
-        obs.y += obs.vy * currentVel;
-
-        // Rebond sur les bords de l'écran
-        if (obs.x <= 0 || obs.x + obs.size >= canvas.width) obs.vx *= -1;
-        if (obs.y <= 0 || obs.y + obs.size >= canvas.height) obs.vy *= -1;
-    } 
-    else {
-        // Mode Standard (Vertical jusqu'à 3000, puis Horizontal ajouté)
-        obs.y += obs.vy * currentVel; // vy est 1 par défaut
-        
-        if (score >= 3000) {
-            obs.x += obs.vx * (currentVel * 0.5); // On ajoute le mouvement horizontal
-        }
-
-        // Logique zigzag existante (optionnelle, peut être cumulée)
-        if (obs.zigzag && score < 5000) {
-            obs.zigzagPhase += obs.zigzagSpeed;
-            obs.x += Math.sin(obs.zigzagPhase) * obs.zigzagAmp;
-        }
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let o = obstacles[i]; o.y += speed;
+    drawObstacle(o);
+    // Collision précise
+    if (Math.hypot((player.x+15)-o.x, (player.y+25)-o.y) < o.r + 12) {
+      gameActive = false; sounds.theme.pause(); sounds.dead.play();
+      window._gameScore = score;
+      document.getElementById('game-final-score').textContent = Math.floor(score);
+      showScreen('over');
     }
+    if (o.y > 620) obstacles.splice(i, 1);
+  }
 
-    // Garder l'obstacle dans les limites X (pour éviter qu'il disparaisse sur les côtés avant 5000)
-    if (score < 5000) {
-        obs.x = Math.max(0, Math.min(canvas.width - obs.size, obs.x));
-    }
-
-    drawObstacle(obs);
-
-    // Suppression de l'obstacle s'il sort par le bas (uniquement si score < 5000)
-    // En mode chaos (5000+), les obstacles rebondissent et restent à l'écran.
-    if (score < 5000 && obs.y > canvas.height + obs.size) { 
-        obstacles.splice(i, 1); 
-        return; 
-    }
-    
-    // ... (votre reste de code : Hitbox, GameOver, etc.)
-
-    // Hitbox : stricte après 1000
-    const margin = hardMode ? 2 : 6;
-    if (
-      player.x + margin < obs.x + obs.size - margin &&
-      player.x + player.w - margin > obs.x + margin &&
-      player.y + margin < obs.y + obs.size - margin &&
-      player.y + player.h - margin > obs.y + margin
-    ) {
-      gameOver();
-    }
-  });
-
-  score += 0.3;
-window._gameScore = score;
+  score += 0.55;
   document.getElementById('hud-score').textContent = Math.floor(score);
-  //document.getElementById('hud-level').textContent = Math.floor(1 + score / 150);
-  // Indicateur de zone danger
-  const dangerEl = document.getElementById('hud-danger');
-  if (dangerEl) {
-    if (score >= 1000) {
-      dangerEl.style.display = 'block';
-      dangerEl.textContent = score >= 2000 ? '⚠️ CRITIQUE' : '⚠️ DANGER';
-      dangerEl.style.color = score >= 2000 ? '#f87171' : '#fbbf24';
-    } else {
-      dangerEl.style.display = 'none';
-    }
-  }
-// Mouvement clavier fluide 
-const spd = 3 * delta;
-if (keys["ArrowLeft"])  player.x = Math.max(0, player.x - spd);
-if (keys["ArrowRight"]) player.x = Math.min(canvas.width - player.w, player.x + spd);
-// Mouvement tactile fluide
-if (touchTargetX !== null) {
-  const canvasRect = canvas.getBoundingClientRect();
-  const relativeX = touchTargetX - canvasRect.left;
-  const targetX = (relativeX / canvasRect.width) * canvas.width - player.w / 2;
-  player.x += (targetX - player.x) * 0.07;
-  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
-}
-
-// -- ensuite cette ligne qui était déjà là --
   animId = requestAnimationFrame(animate);
 }
 
-function gameOver() {
-  gameActive = false;
-  cancelAnimationFrame(animId);
-  window.removeEventListener("keydown", movePlayer);
-  sounds.dead.play();		
-  sounds.theme.pause();
-  sounds.theme.currentTime = 0;	
-		
-  
-  const finalScore = Math.floor(score);
-  const scoreEl = document.getElementById('game-final-score');
-  
-  // Condition : finit par 67 ET score <= 1000
-  if (finalScore % 100 === 67 && finalScore <= 1000) {
-    const scoreStr = finalScore.toString();
-    const prefix = scoreStr.slice(0, -2); // Les chiffres avant le 67 (ex: "2" pour 267)
-    
-    // On injecte le 6 et le 7 avec leurs animations inversées
-    scoreEl.innerHTML = `${prefix}<span class="digit-up">6</span><span class="digit-down">7</span>`;
-  } else {
-    scoreEl.textContent = finalScore;
-  }
+function openGame() { document.getElementById('game-overlay').style.display = 'flex'; showScreen('title'); }
+function closeGame() { gameActive = false; sounds.theme.pause(); document.getElementById('game-overlay').style.display = 'none'; }
 
-  document.getElementById('pseudo-input').value = '';
-  document.getElementById('save-feedback').textContent = '';
-  document.getElementById('save-score-btn').disabled = false;
-  showScreen('over');
-}
-
-// ─── LEADERBOARD RENDER ───
-window.renderLeaderboard = function(entries) {
-  const el = document.getElementById('lb-list');
-  if (!el) return;
-  if (!entries || entries.length === 0) {
-    el.innerHTML = '<div class="lb-empty">Aucun score encore — soyez le premier ! 🌙</div>';
-    return;
-  }
-  const medals = ['🥇','🥈','🥉'];
-  const classes = ['gold','silver','bronze'];
-  el.innerHTML = entries.map((e, i) => {
-    const isTop = i === 0;
-    const medal = i < 3
-      ? `<span class="lb-rank ${classes[i]}">${medals[i]}</span>`
-      : `<span class="lb-rank">${i+1}</span>`;
-    const safeName = String(e.name).replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<div class="lb-row${isTop ? ' lb-top' : ''}">${medal}<span class="lb-name">${safeName}</span><span class="lb-score">${e.score}</span></div>`;
-  }).join('');
-};
-
-	
-const keys = {};
-window.addEventListener("keydown", (e) => { keys[e.key] = true; });
-window.addEventListener("keyup", (e) => { keys[e.key] = false; });
-	
-</script>
-
-<script>
-function acceptCookies() {
-    // On tente l'ouverture forcée dans un nouvel onglet
-    const newWindow = window.open("https://www.lafabrique-cookies.fr/", "_blank", "noopener,noreferrer");
-    
-    // Si pour une raison X le navigateur bloque le popup, on peut l'aider ainsi :
-    if (newWindow) {
-      newWindow.focus();
-    }
-
-    // On cache la bannière
-    document.getElementById('cookie-banner').style.display = 'none';
-  }
-
-  function refuseCookies() {
-    // Cache simplement la bannière et ne fait rien d'autre
-    document.getElementById('cookie-banner').style.display = 'none';
-  }
+let seq = "";
+window.addEventListener("keydown", (e) => {
+    seq += e.key.toLowerCase(); if (seq.endsWith("mdn")) openGame();
+});
 </script>
 	
 </body>
