@@ -1842,6 +1842,15 @@ function openGame() {
 function closeGame() { gameActive = false; sounds.theme.pause(); document.getElementById('game-overlay').style.display = 'none'; }
 let seq = ""; window.addEventListener("keydown", (e) => { seq += e.key.toLowerCase(); if (seq.endsWith("mdn")) openGame(); });
 </script>
+
+<script>
+	// La fonction qui manquait pour ton bouton HTML
+function refuseCookies() {
+  const banner = document.getElementById('cookie-banner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('cookies-refused', 'true');
+}
+</script>
 	
 </body>
 	
