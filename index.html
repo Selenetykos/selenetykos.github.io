@@ -1573,6 +1573,8 @@ function startGame() {
   rocketTipGrad.addColorStop(0, "#a78bfa"); rocketTipGrad.addColorStop(1, "#7eb8f7");
   score = 0; obstacles = []; gameActive = true;
   player = { x: 195, y: 480, w: 30, h: 50 };
+  document.getElementById('save-score-btn').disabled = false;
+  document.getElementById('save-feedback').textContent = '';
   stars = Array.from({length: 80}, () => ({x: Math.random()*420, y: Math.random()*580, r: Math.random()*1.3+0.2, s: Math.random()*1.5+0.5}));
   sounds.dead.pause(); sounds.dead.currentTime = 0; sounds.theme.play();
   showScreen('play');
