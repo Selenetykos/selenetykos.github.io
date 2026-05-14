@@ -1676,8 +1676,26 @@ window.addEventListener('load', () => {
 
 <script>
 // --- ENGINE GRAPHIQUE HD AVEC PALIERS DE DIFFICULTÉ ---
-const sounds = { theme: new Audio('theme.mp3'), dead: new Audio('dead.mp3') };
+const sounds = { theme: new Audio('theme.mp3'), tdTheme: new Audio('theme2.mp3'), dead: new Audio('dead.mp3') };
 sounds.theme.loop = true;
+sounds.tdTheme.loop = true;
+sounds.tdTheme.addEventListener('ended', () => {
+  if (tdGameActive) { sounds.tdTheme.currentTime = 0; sounds.tdTheme.play().catch(() => {}); }
+});
+function playTDTheme() {
+  try {
+    sounds.theme.pause();
+    sounds.tdTheme.pause();
+    sounds.tdTheme.currentTime = 0;
+    sounds.tdTheme.play().catch(() => {});
+  } catch (e) {}
+}
+function stopTDTheme() {
+  try {
+    sounds.tdTheme.pause();
+    sounds.tdTheme.currentTime = 0;
+  } catch (e) {}
+}
 let sfxCtx;
 const sfx = {
   tone(freq, dur = 0.08, type = 'sine', gain = 0.045) {
@@ -1723,15 +1741,23 @@ const keys = {};
 let lastRocketRunId = null;
 let currentPlayer = null;
 const MAP_SKINS = [
-  {id:'classic', name:'Orbite Classique', price:0, planet:'Lune pâle', colors:{bg:'#02020f', path:'#1a1a4a', path2:'#252560', base:'#a78bfa', stars:'rgba(255,248,224,0.5)', planet:'#d8d3aa', towerAura:'#7eb8f7', enemyAura:'#4ade80'}},
-  {id:'ice', name:'Cryo Lune', price:1200, planet:'Planète gelée', colors:{bg:'#03131f', path:'#12354a', path2:'#1e5d76', base:'#7eb8f7', stars:'rgba(210,245,255,0.65)', planet:'#b7f3ff', towerAura:'#7dd3fc', enemyAura:'#bae6fd'}},
-  {id:'mars', name:'Mars Rouge', price:2200, planet:'Mars poussière', colors:{bg:'#140706', path:'#4a1912', path2:'#6f2a1a', base:'#fb923c', stars:'rgba(255,218,190,0.55)', planet:'#c2410c', towerAura:'#fdba74', enemyAura:'#fb7185'}},
-  {id:'nebula', name:'Nébuleuse Violette', price:3600, planet:'Géante violette', colors:{bg:'#090517', path:'#281451', path2:'#3d2378', base:'#c4b5fd', stars:'rgba(230,220,255,0.62)', planet:'#7c3aed', towerAura:'#c4b5fd', enemyAura:'#f0abfc'}},
-  {id:'aurora', name:'Aurore Ionique', price:5200, planet:'Monde auroral', colors:{bg:'#021611', path:'#0b3d35', path2:'#146b5f', base:'#34d399', stars:'rgba(210,255,235,0.6)', planet:'#10b981', towerAura:'#6ee7b7', enemyAura:'#2dd4bf'}},
-  {id:'eclipse', name:'Éclipse Noire', price:7200, planet:'Éclipse', colors:{bg:'#03030a', path:'#1c1c2f', path2:'#34344f', base:'#f8fafc', stars:'rgba(255,255,255,0.72)', planet:'#111827', towerAura:'#e5e7eb', enemyAura:'#94a3b8'}},
-  {id:'solar', name:'Forge Solaire', price:9500, planet:'Soleil minier', colors:{bg:'#160b02', path:'#5a2a06', path2:'#8a4308', base:'#fbbf24', stars:'rgba(255,230,170,0.62)', planet:'#f59e0b', towerAura:'#fde68a', enemyAura:'#f97316'}},
-  {id:'quantum', name:'Faille Quantique', price:12000, planet:'Faille bleue', colors:{bg:'#06101f', path:'#0b2f5b', path2:'#154b8c', base:'#38bdf8', stars:'rgba(190,230,255,0.68)', planet:'#0ea5e9', towerAura:'#67e8f9', enemyAura:'#818cf8'}},
-  {id:'royal', name:'Couronne Stellaire', price:15000, planet:'Couronne royale', colors:{bg:'#12051a', path:'#3f124f', path2:'#6d1c7d', base:'#f0abfc', stars:'rgba(250,220,255,0.75)', planet:'#d946ef', towerAura:'#f5d0fe', enemyAura:'#f0abfc'}}
+  {id:'classic', name:'Orbite Classique', price:0, planet:'Lune pale', effect:'rings', colors:{bg:'#02020f', path:'#1a1a4a', path2:'#252560', base:'#a78bfa', stars:'rgba(255,248,224,0.5)', planet:'#d8d3aa', towerAura:'#7eb8f7', enemyAura:'#4ade80'}},
+  {id:'ice', name:'Cryo Lune', price:1200, planet:'Banquise orbitale', effect:'crystals', colors:{bg:'#021923', path:'#0b3a52', path2:'#1b7891', base:'#7dd3fc', stars:'rgba(210,245,255,0.7)', planet:'#cffafe', towerAura:'#67e8f9', enemyAura:'#bae6fd'}},
+  {id:'mars', name:'Dunes de Mars', price:2200, planet:'Desert rouge', effect:'dust', colors:{bg:'#170805', path:'#5a1f13', path2:'#9a3c1b', base:'#fb923c', stars:'rgba(255,218,190,0.58)', planet:'#dc2626', towerAura:'#fdba74', enemyAura:'#fb7185'}},
+  {id:'nebula', name:'Nebuleuse Bonbon', price:3600, planet:'Nuage cosmique', effect:'nebula', colors:{bg:'#0b0618', path:'#30205f', path2:'#6d28d9', base:'#f0abfc', stars:'rgba(255,225,255,0.72)', planet:'#c026d3', towerAura:'#f5d0fe', enemyAura:'#a78bfa'}},
+  {id:'aurora', name:'Aurore Ionique', price:5200, planet:'Monde auroral', effect:'aurora', colors:{bg:'#021611', path:'#0b3d35', path2:'#14b8a6', base:'#34d399', stars:'rgba(210,255,235,0.65)', planet:'#10b981', towerAura:'#6ee7b7', enemyAura:'#2dd4bf'}},
+  {id:'eclipse', name:'Eclipse Noire', price:7200, planet:'Soleil masque', effect:'eclipse', colors:{bg:'#020203', path:'#181820', path2:'#3f3f46', base:'#f8fafc', stars:'rgba(255,255,255,0.75)', planet:'#09090b', towerAura:'#f8fafc', enemyAura:'#94a3b8'}},
+  {id:'solar', name:'Forge Solaire', price:9500, planet:'Soleil minier', effect:'solar', colors:{bg:'#180b02', path:'#5f2b06', path2:'#b45309', base:'#fbbf24', stars:'rgba(255,230,170,0.65)', planet:'#f97316', towerAura:'#fde68a', enemyAura:'#ef4444'}},
+  {id:'quantum', name:'Faille Quantique', price:12000, planet:'Portail bleu', effect:'portal', colors:{bg:'#06101f', path:'#0b2f5b', path2:'#2563eb', base:'#38bdf8', stars:'rgba(190,230,255,0.72)', planet:'#0ea5e9', towerAura:'#67e8f9', enemyAura:'#818cf8'}},
+  {id:'royal', name:'Couronne Stellaire', price:15000, planet:'Couronne royale', effect:'crown', colors:{bg:'#160515', path:'#4a123d', path2:'#be185d', base:'#f9a8d4', stars:'rgba(255,220,245,0.78)', planet:'#db2777', towerAura:'#fbcfe8', enemyAura:'#f0abfc'}},
+  {id:'void', name:'Abysse Cosmique', price:20000, planet:'Trou noir calme', effect:'void', colors:{bg:'#01030b', path:'#111827', path2:'#312e81', base:'#818cf8', stars:'rgba(205,215,255,0.75)', planet:'#020617', towerAura:'#a5b4fc', enemyAura:'#6366f1'}},
+  {id:'crystal', name:'Cristal Astral', price:26000, planet:'Astre prismatique', effect:'prism', colors:{bg:'#041018', path:'#14323f', path2:'#0891b2', base:'#22d3ee', stars:'rgba(210,250,255,0.8)', planet:'#67e8f9', towerAura:'#a5f3fc', enemyAura:'#2dd4bf'}},
+  {id:'ember', name:'Coeur Magma', price:34000, planet:'Noyau incandescent', effect:'lava', colors:{bg:'#170607', path:'#4d1017', path2:'#be123c', base:'#fb7185', stars:'rgba(255,205,215,0.66)', planet:'#e11d48', towerAura:'#fda4af', enemyAura:'#fb923c'}},
+  {id:'garden', name:'Jardin Orbital', price:43000, planet:'Biosphere lunaire', effect:'garden', colors:{bg:'#03140e', path:'#123726', path2:'#16a34a', base:'#86efac', stars:'rgba(215,255,225,0.7)', planet:'#22c55e', towerAura:'#bbf7d0', enemyAura:'#4ade80'}},
+  {id:'storm', name:'Tempete Plasma', price:54000, planet:'Orage vivant', effect:'storm', colors:{bg:'#090516', path:'#21124a', path2:'#7c3aed', base:'#a78bfa', stars:'rgba(230,220,255,0.78)', planet:'#8b5cf6', towerAura:'#ddd6fe', enemyAura:'#38bdf8'}},
+  {id:'goldnova', name:'Nova Royale', price:68000, planet:'Etoile couronnee', effect:'goldnova', colors:{bg:'#130d02', path:'#4f3607', path2:'#ca8a04', base:'#facc15', stars:'rgba(255,238,170,0.84)', planet:'#eab308', towerAura:'#fef08a', enemyAura:'#f59e0b'}},
+  {id:'singularity', name:'Singularite Bleue', price:82000, planet:'Anneau gravite', effect:'singularity', colors:{bg:'#030716', path:'#0c2553', path2:'#1d4ed8', base:'#60a5fa', stars:'rgba(190,220,255,0.85)', planet:'#1e3a8a', towerAura:'#93c5fd', enemyAura:'#c084fc'}},
+  {id:'celestial', name:'Celeste Flex 100K', price:100000, planet:'Trone mythique', effect:'celestial', colors:{bg:'#05040b', path:'#3a2a13', path2:'#facc15', base:'#fff8c0', stars:'rgba(255,252,220,0.96)', planet:'#ffffff', towerAura:'#ffffff', enemyAura:'#f0abfc'}}
 ];
 
 // ─── SKINS DE FUSÉE (pour Fusée Dodge) ───
@@ -1783,6 +1809,54 @@ const ROCKET_SKINS = [
     body:['#78350f','#fbbf24','#d97706'], tip:['#fef3c7','#f59e0b'],
     fins:'#fef3c7', flame:['rgba(255,220,0,0.95)','rgba(255,100,0,0)'], window:'#fef3c7',
     trail:'rgba(255,200,0,0.9)', shape:'royal'
+  },
+  {
+    id:'r_void', name:'Spectre Abyssal', price:18000, desc:'Une coque noire traversée de reflets cosmiques',
+    body:['#050816','#1e1b4b','#020617'], tip:['#818cf8','#c4b5fd'],
+    fins:'#818cf8', flame:['rgba(120,90,255,0.9)','rgba(25,0,120,0)'], window:'#c4b5fd',
+    trail:'rgba(120,90,255,0.75)', shape:'stealth'
+  },
+  {
+    id:'r_crystal', name:'Cristal Boreal', price:24000, desc:'Taillée comme un fragment de comète gelée',
+    body:['#083344','#22d3ee','#0e7490'], tip:['#ecfeff','#67e8f9'],
+    fins:'#67e8f9', flame:['rgba(120,245,255,0.95)','rgba(0,180,220,0)'], window:'#ecfeff',
+    trail:'rgba(100,230,255,0.78)', shape:'ice'
+  },
+  {
+    id:'r_ember', name:'Phénix Rouge', price:32000, desc:'Un moteur rouge incandescent pour les pilotes audacieux',
+    body:['#450a0a','#f43f5e','#991b1b'], tip:['#fed7aa','#fb923c'],
+    fins:'#fb7185', flame:['rgba(255,70,70,0.96)','rgba(255,180,0,0)'], window:'#fed7aa',
+    trail:'rgba(255,90,70,0.82)', shape:'fire'
+  },
+  {
+    id:'r_garden', name:'Gaïa Orbitale', price:42000, desc:'Blindage vert inspiré des serres lunaires',
+    body:['#052e16','#22c55e','#166534'], tip:['#bbf7d0','#86efac'],
+    fins:'#86efac', flame:['rgba(90,255,150,0.92)','rgba(0,170,80,0)'], window:'#dcfce7',
+    trail:'rgba(90,255,150,0.76)', shape:'aurora'
+  },
+  {
+    id:'r_storm', name:'Orage Plasma', price:54000, desc:'Une fusée électrique qui brille comme un orage spatial',
+    body:['#1e1b4b','#7c3aed','#312e81'], tip:['#f0abfc','#60a5fa'],
+    fins:'#a78bfa', flame:['rgba(180,80,255,0.95)','rgba(0,180,255,0)'], window:'#f0abfc',
+    trail:'rgba(170,90,255,0.82)', shape:'aurora'
+  },
+  {
+    id:'r_goldnova', name:'Nova Impériale', price:68000, desc:'Dorée, massive, construite pour dominer le classement',
+    body:['#713f12','#facc15','#b45309'], tip:['#fff7ed','#fbbf24'],
+    fins:'#fef08a', flame:['rgba(255,230,80,0.98)','rgba(255,80,0,0)'], window:'#fef3c7',
+    trail:'rgba(255,220,80,0.9)', shape:'royal'
+  },
+  {
+    id:'r_singularity', name:'Singularité Bleue', price:82000, desc:'Un prototype gravitationnel aux lignes froides',
+    body:['#0f172a','#2563eb','#1e3a8a'], tip:['#bfdbfe','#38bdf8'],
+    fins:'#60a5fa', flame:['rgba(80,170,255,0.95)','rgba(70,0,255,0)'], window:'#dbeafe',
+    trail:'rgba(90,160,255,0.84)', shape:'eclipse'
+  },
+  {
+    id:'r_celestial', name:'Céleste Ultime', price:100000, desc:'Le skin mythique des pilotes qui touchent les étoiles',
+    body:['#fef3c7','#ffffff','#fde68a'], tip:['#f0abfc','#7eb8f7'],
+    fins:'#fff8c0', flame:['rgba(255,255,220,0.98)','rgba(167,139,250,0)'], window:'#7eb8f7',
+    trail:'rgba(255,248,192,0.95)', shape:'celestial'
   }
 ];
 const TD_MAPS = [
@@ -1973,7 +2047,20 @@ function drawRocketPreview(canvas, skin) {
   const bodyG = c.createLinearGradient(cx-6, 0, cx+6, 0);
   bodyG.addColorStop(0, skin.body[0]); bodyG.addColorStop(0.5, skin.body[1]); bodyG.addColorStop(1, skin.body[2]);
 
-  if (skin.shape === 'lunar') {
+  if (skin.shape === 'celestial') {
+    c.shadowColor = '#fff8c0'; c.shadowBlur = 10;
+    c.fillStyle = bodyG; c.beginPath(); c.roundRect(cx-6, rocketY+6, 12, 34, 4); c.fill();
+    const tGc100 = c.createLinearGradient(0,rocketY-3,0,rocketY+10); tGc100.addColorStop(0,skin.tip[0]); tGc100.addColorStop(1,skin.tip[1]);
+    c.fillStyle = tGc100; c.beginPath(); c.moveTo(cx, rocketY-3); c.lineTo(cx-9, rocketY+10); c.lineTo(cx+9, rocketY+10); c.closePath(); c.fill();
+    c.fillStyle = skin.fins;
+    c.beginPath(); c.moveTo(cx-6, rocketY+22); c.lineTo(cx-17, rocketY+38); c.lineTo(cx-7, rocketY+40); c.fill();
+    c.beginPath(); c.moveTo(cx+6, rocketY+22); c.lineTo(cx+17, rocketY+38); c.lineTo(cx+7, rocketY+40); c.fill();
+    c.strokeStyle = '#fff'; c.lineWidth = 1; c.globalAlpha = 0.8;
+    c.beginPath(); c.arc(cx, rocketY+20, 9, 0, Math.PI*2); c.stroke();
+    c.beginPath(); c.moveTo(cx-7, rocketY+30); c.lineTo(cx+7, rocketY+30); c.moveTo(cx, rocketY+24); c.lineTo(cx, rocketY+36); c.stroke();
+    c.globalAlpha = 1; c.fillStyle = skin.window; c.shadowColor = skin.window; c.shadowBlur = 8;
+    c.beginPath(); c.arc(cx, rocketY+20, 3.8, 0, Math.PI*2); c.fill(); c.shadowBlur = 0;
+  } else if (skin.shape === 'lunar') {
     // Stubby Apollo-style capsule
     c.fillStyle = bodyG; c.beginPath(); c.roundRect(cx-8, rocketY+8, 16, 30, 3); c.fill();
     // heat shield
@@ -2230,7 +2317,19 @@ function drawRocket(x, y) {
   // body
   ctx.fillStyle = rocketBodyGrad;
 
-  if (rSkin.shape === 'lunar') {
+  if (rSkin.shape === 'celestial') {
+    ctx.shadowColor = '#fff8c0'; ctx.shadowBlur = 18;
+    ctx.fillStyle = rocketBodyGrad; ctx.beginPath(); ctx.roundRect(x+8, y+8, 14, 40, 5); ctx.fill();
+    ctx.fillStyle = rocketTipGrad; ctx.beginPath(); ctx.moveTo(cx, y-5); ctx.lineTo(x+5, y+12); ctx.lineTo(x+25, y+12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = rSkin.fins;
+    ctx.beginPath(); ctx.moveTo(x+8, y+25); ctx.lineTo(x-5, y+42); ctx.lineTo(x+4, y+50); ctx.lineTo(x+8, y+47); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+22, y+25); ctx.lineTo(x+35, y+42); ctx.lineTo(x+26, y+50); ctx.lineTo(x+22, y+47); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.75;
+    ctx.beginPath(); ctx.arc(cx, y+23, 11, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-9, y+35); ctx.lineTo(cx+9, y+35); ctx.moveTo(cx, y+27); ctx.lineTo(cx, y+43); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = rSkin.window; ctx.shadowColor = rSkin.window; ctx.shadowBlur = 14;
+    ctx.beginPath(); ctx.arc(cx, y+23, 5, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+  } else if (rSkin.shape === 'lunar') {
     ctx.beginPath(); ctx.roundRect(x+6, y+12, 18, 36, 3); ctx.fill();
     ctx.fillStyle = rSkin.body[2]; ctx.beginPath(); ctx.arc(cx, y+48, 10, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = rocketTipGrad; ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(x+6, y+12); ctx.lineTo(x+24, y+12); ctx.fill();
@@ -2619,6 +2718,7 @@ function openTD() {
 }
 function closeTD() {
   tdGameActive = false;
+  stopTDTheme();
   cancelAnimationFrame(tdAnimId);
   hideTDPanel();
   document.getElementById('td-overlay').style.display = 'none';
@@ -2632,6 +2732,7 @@ function tdShowScreen(name) {
 }
 function tdBackToTitle() {
   tdGameActive = false;
+  stopTDTheme();
   cancelAnimationFrame(tdAnimId);
   hideTDPanel();
   tdShowScreen('title');
@@ -2677,6 +2778,7 @@ const ENEMY_DEFS = {
 function startTD() {
   tdShowScreen('play');
   sfx.click();
+  playTDTheme();
   tdCurrentMap = getWeeklyTDMap();
   activeMapSkin = getActiveSkin();
   tdCanvas = document.getElementById('tdCanvas');
@@ -3016,6 +3118,7 @@ function tdDraw() {
   c.fillStyle=colors.stars;
   for (let i=0;i<60;i++) { const sx=(i*137+41)%w, sy=(i*251+17)%h; c.beginPath(); c.arc(sx,sy,0.8,0,Math.PI*2); c.fill(); }
   drawSkinPlanet(c, colors, w, h);
+  drawMapSkinEffect(c, skin, w, h);
 
   c.strokeStyle='rgba(255,255,227,0.045)'; c.lineWidth=1;
   for (let gx=TD_GRID/2; gx<w; gx+=TD_GRID) { c.beginPath(); c.moveTo(gx,0); c.lineTo(gx,h); c.stroke(); }
@@ -3079,6 +3182,40 @@ function drawSkinPlanet(c, colors, w, h) {
   c.restore();
 }
 
+function drawMapSkinEffect(c, skin, w, h) {
+  const colors = skin.colors;
+  c.save();
+  c.strokeStyle = colors.base;
+  c.fillStyle = colors.base;
+  if (skin.effect === 'aurora' || skin.effect === 'nebula') {
+    c.globalAlpha = 0.18;
+    for (let i=0;i<4;i++) { c.beginPath(); c.moveTo(-20, 80+i*64); c.bezierCurveTo(80, 20+i*18, 210, 130+i*20, w+30, 54+i*72); c.lineWidth = 10-i*1.5; c.stroke(); }
+  } else if (skin.effect === 'crystals' || skin.effect === 'prism') {
+    c.globalAlpha = 0.32;
+    [[48,58,12],[312,116,16],[88,372,14],[286,410,10]].forEach(([x,y,s]) => { c.beginPath(); c.moveTo(x,y-s); c.lineTo(x+s,y); c.lineTo(x,y+s); c.lineTo(x-s,y); c.closePath(); c.stroke(); });
+  } else if (skin.effect === 'storm') {
+    c.globalAlpha = 0.55; c.lineWidth = 2;
+    [[52,40],[290,74],[232,360]].forEach(([x,y]) => { c.beginPath(); c.moveTo(x,y); c.lineTo(x+14,y+20); c.lineTo(x+4,y+20); c.lineTo(x+20,y+48); c.stroke(); });
+  } else if (skin.effect === 'void' || skin.effect === 'singularity') {
+    c.globalAlpha = 0.28; c.lineWidth = 2;
+    for (let r=18;r<70;r+=13) { c.beginPath(); c.ellipse(78,86,r,r*0.42,0.55,0,Math.PI*2); c.stroke(); }
+  } else if (skin.effect === 'solar' || skin.effect === 'goldnova' || skin.effect === 'lava') {
+    c.globalAlpha = 0.24; c.lineWidth = 2;
+    for (let i=0;i<10;i++) { const x=(i*47+18)%w; c.beginPath(); c.moveTo(x,0); c.lineTo(x+35,80); c.stroke(); }
+  } else if (skin.effect === 'garden') {
+    c.globalAlpha = 0.34;
+    [[38,96],[320,196],[54,338],[275,52],[305,380]].forEach(([x,y]) => { c.beginPath(); c.ellipse(x,y,5,10,-0.55,0,Math.PI*2); c.fill(); });
+  } else if (skin.effect === 'celestial') {
+    c.globalAlpha = 0.72; c.lineWidth = 2;
+    for (let i=0;i<14;i++) { const a=i*Math.PI*2/14; c.beginPath(); c.moveTo(w-38+Math.cos(a)*28,42+Math.sin(a)*28); c.lineTo(w-38+Math.cos(a)*58,42+Math.sin(a)*58); c.stroke(); }
+    c.globalAlpha = 0.42;
+    [[52,82,10],[308,148,8],[72,382,9],[284,404,7]].forEach(([x,y,s]) => { c.beginPath(); c.moveTo(x,y-s); c.lineTo(x+s,y); c.lineTo(x,y+s); c.lineTo(x-s,y); c.closePath(); c.fill(); });
+  } else {
+    c.globalAlpha = 0.18; c.beginPath(); c.ellipse(w-38,42,42,12,-0.35,0,Math.PI*2); c.stroke();
+  }
+  c.restore();
+}
+
 function drawTowerSkin(c,t) {
   const selected = tdInspectedTower===t;
   c.save(); c.translate(t.x,t.y);
@@ -3120,7 +3257,7 @@ function tdUpdateHUD() {
 }
 
 function tdGameOver() {
-  tdGameActive=false; cancelAnimationFrame(tdAnimId);
+  tdGameActive=false; stopTDTheme(); cancelAnimationFrame(tdAnimId);
   hideTDPanel();
   document.removeEventListener('touchstart', onTDTouch);
   document.getElementById('td-final-wave').textContent = tdWave;
