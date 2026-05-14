@@ -435,6 +435,11 @@
     justify-content: center;
     font-family: 'Orbitron', monospace;
     color: var(--moon);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 62px 12px 22px;
+    box-sizing: border-box;
+    touch-action: pan-y;
   }
 
   #game-title-screen {
@@ -443,6 +448,8 @@
     align-items: center;
     gap: 20px;
     text-align: center;
+    width: 100%;
+    max-width: 420px;
   }
   #game-title-screen h2 {
     font-family: 'Orbitron', monospace;
@@ -530,6 +537,8 @@
     border-radius: 4px;
     box-shadow: 0 0 40px rgba(126,184,247,0.15), inset 0 0 60px rgba(0,0,8,0.8);
     display: block;
+    width: min(420px, calc(100vw - 24px));
+    height: auto;
   }
   #game-hint {
     margin-top: 12px;
@@ -795,9 +804,61 @@
   
   /* Retire le rectangle bleu au clic sur mobile */
   -webkit-tap-highlight-color: transparent;
-  
-  /* Empêche les gestes par défaut du navigateur (comme le scroll ou le zoom) sur le canvas */
+}
+
+canvas {
+  /* Empêche les gestes par défaut du navigateur seulement sur les zones de jeu */
   touch-action: none;
+}
+
+#game-overlay,
+#game-select-menu,
+.game-btn,
+#game-overlay button {
+  touch-action: manipulation;
+}
+
+@media (max-width: 600px) {
+  #game-overlay,
+  #game-select-menu {
+    justify-content: flex-start !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 64px 12px 24px !important;
+    box-sizing: border-box;
+  }
+
+  #game-title-screen {
+    gap: 12px;
+    padding-bottom: 18px;
+  }
+
+  #game-title-screen p {
+    margin: 0;
+  }
+
+  #game-shop-screen,
+  #game-history-screen,
+  #game-over-screen {
+    min-height: 100%;
+    height: auto !important;
+  }
+
+  #game-overlay[data-screen="play"] {
+    justify-content: center !important;
+    overflow: hidden !important;
+    padding: 56px 12px 14px !important;
+  }
+
+  #game-overlay input,
+  #game-overlay button,
+  #game-select-menu button {
+    font-size: max(16px, 1em) !important;
+  }
+
+  #gameCanvas {
+    max-height: calc(100vh - 140px);
+  }
 }
 
 	  .morse-container {
@@ -1499,7 +1560,7 @@ window.addEventListener('load', () => {
     <div id="td-tower-bar" style="display:flex; gap:6px; padding:6px 0; flex-wrap:wrap; justify-content:center; width:100%; max-width:360px;"></div>
     <div id="td-info" style="color:#777; font-size:0.68rem; letter-spacing:1px; min-height:16px; font-family:'Exo 2',sans-serif; text-align:center; width:min(360px, calc(100vw - 24px));"></div>
     <button onclick="closeTD()" style="padding:7px 16px; background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.35); color:#f87171; font-family:'Orbitron',monospace; font-size:0.58rem; letter-spacing:1px; cursor:pointer; border-radius:3px;">Sortir du jeu</button>
-    <div id="td-upgrade-panel" style="display:none; width:min(360px, calc(100vw - 24px)); border:1px solid rgba(167,139,250,0.28); background:rgba(255,255,227,0.045); border-radius:4px; padding:8px 10px; box-shadow:0 0 22px rgba(126,184,247,0.08);">
+    <div id="td-upgrade-panel" style="display:none; position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:10003; width:min(360px, calc(100vw - 24px)); border:1px solid rgba(167,139,250,0.45); background:rgba(6,6,24,0.96); backdrop-filter:blur(10px); border-radius:4px; padding:10px 12px; box-shadow:0 0 28px rgba(126,184,247,0.22);">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:7px;">
         <span id="td-panel-title" style="font-family:'Orbitron',monospace; color:#c4b5fd; font-size:0.68rem; letter-spacing:1.8px;"></span>
         <span id="td-panel-level" style="font-family:'Orbitron',monospace; color:#7eb8f7; font-size:0.62rem; letter-spacing:1.2px;"></span>
@@ -1767,6 +1828,7 @@ window.addEventListener("keydown", (e) => keys[e.key] = true);
 window.addEventListener("keyup", (e) => keys[e.key] = false);
 
 function showScreen(name) {
+  document.getElementById('game-overlay').setAttribute('data-screen', name);
   document.getElementById('game-title-screen').style.display = name === 'title' ? 'flex' : 'none';
   document.getElementById('game-canvas-wrap').style.display = name === 'play' ? 'flex' : 'none';
   document.getElementById('game-over-screen').style.display = name === 'over' ? 'flex' : 'none';
@@ -2558,6 +2620,7 @@ function openTD() {
 function closeTD() {
   tdGameActive = false;
   cancelAnimationFrame(tdAnimId);
+  hideTDPanel();
   document.getElementById('td-overlay').style.display = 'none';
   tdShowScreen('title');
 }
@@ -2565,10 +2628,12 @@ function tdShowScreen(name) {
   document.getElementById('td-title-screen').style.display = name === 'title' ? 'flex' : 'none';
   document.getElementById('td-game-wrap').style.display   = name === 'play'  ? 'flex' : 'none';
   document.getElementById('td-over-screen').style.display = name === 'over'  ? 'flex' : 'none';
+  if (name !== 'play') hideTDPanel();
 }
 function tdBackToTitle() {
   tdGameActive = false;
   cancelAnimationFrame(tdAnimId);
+  hideTDPanel();
   tdShowScreen('title');
 }
 
@@ -2620,6 +2685,7 @@ function startTD() {
   tdEnemies=[]; tdTowers=[]; tdProjectiles=[]; tdParticles=[];
   tdSpawnQueue=[]; tdSpawnTimer=0; tdWaveActive=false; tdBetweenWaves=true; tdBetweenTimer=3000;
   tdSelectedTower='laser'; tdInspectedTower=null; tdPaused=false; tdGameActive=true; tdLastTime=performance.now();
+  hideTDPanel();
   const pauseBtn = document.getElementById('td-pause-btn'); if (pauseBtn) pauseBtn.textContent = 'Pause';
   buildTowerBar();
   cancelAnimationFrame(tdAnimId);
@@ -2636,6 +2702,12 @@ function onTDTouch(e) {
   if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
     onTDClick({clientX: t.clientX, clientY: t.clientY});
     e.preventDefault();
+    return;
+  }
+  const panel = document.getElementById('td-upgrade-panel');
+  if (tdInspectedTower && panel && !panel.contains(e.target)) {
+    hideTDPanel();
+    document.getElementById('td-info').textContent = 'Tour désélectionnée.';
   }
 }
 
@@ -2680,6 +2752,7 @@ function getTowerSellValue(tower) {
 function hideTDPanel() {
   const panel = document.getElementById('td-upgrade-panel');
   if (panel) panel.style.display = 'none';
+  tdInspectedTower = null;
 }
 function showTDPanel(tower) {
   tdInspectedTower = tower;
@@ -2748,6 +2821,11 @@ function onTDClick(e) {
   const cx = cell.x, cy = cell.y;
   for (const t of tdTowers) {
     if (t.gridX === cx && t.gridY === cy) { showTDPanel(t); sfx.select(); return; }
+  }
+  if (tdInspectedTower) {
+    hideTDPanel();
+    document.getElementById('td-info').textContent = 'Tour désélectionnée.';
+    return;
   }
   if (isOnPath(cx, cy, 16)) { hideTDPanel(); document.getElementById('td-info').textContent = '⛔ Case bloquée par le chemin !'; sfx.denied(); return; }
   const def = TOWER_DEFS[tdSelectedTower];
@@ -3043,6 +3121,7 @@ function tdUpdateHUD() {
 
 function tdGameOver() {
   tdGameActive=false; cancelAnimationFrame(tdAnimId);
+  hideTDPanel();
   document.removeEventListener('touchstart', onTDTouch);
   document.getElementById('td-final-wave').textContent = tdWave;
   document.getElementById('td-final-score').textContent = Math.floor(tdScore);
