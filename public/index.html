@@ -3154,15 +3154,7 @@ async function openHistory() {
 }
 
 // === INITIALISATION ===
-function openGame() {
-  const ov = document.getElementById('game-overlay');
-  ov.style.display = 'flex';
-  ov.style.pointerEvents = 'auto';
-  showScreen('title');
-  
-  // On charge le leaderboard immédiatement via le proxy
-  loadLeaderboard();
-}
+
 
 // === OPEN / CLOSE ===
 async function waitForStorage(maxMs = 5000) {
