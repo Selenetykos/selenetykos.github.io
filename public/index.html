@@ -3083,14 +3083,39 @@ async function checkWeekReset() {
 // === LEADERBOARD ===
 async function loadLeaderboard() {
   const lbList = document.getElementById('lb-list');
+  if (!lbList) return;
+
   try {
     const response = await fetch('/api/leaderboard');
-    const entries = await response.json();
     
-    if (!entries || entries.length === 0) { 
-        lbList.innerHTML = '<div class="lb-loading">Aucun score cette semaine.</div>'; 
-        return; 
+    // Si le serveur répond une erreur (404, 500...)
+    if (!response.ok) {
+      lbList.innerHTML = `<div class="lb-loading" style="color:#f87171">Erreur Serveur (${response.status})</div>`;
+      return;
     }
+
+    const entries = await response.json();
+    console.log("Données reçues du serveur :", entries); // Regarde bien ce log dans ta console !
+
+    if (!entries || entries.length === 0) {
+      lbList.innerHTML = '<div class="lb-loading">Aucun score pour le moment. Soyez le premier !</div>';
+      return;
+    }
+
+    // On génère le HTML des scores
+    lbList.innerHTML = entries.map((en, i) => `
+      <div class="lb-entry">
+        <span class="lb-rank">#${i + 1}</span>
+        <span class="lb-name">${en.name || 'Anonyme'}</span>
+        <span class="lb-score">${Math.floor(en.score)}</span>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    console.error("Erreur de chargement leaderboard:", err);
+    lbList.innerHTML = '<div class="lb-loading" style="color:#f87171">Impossible de charger le Panthéon</div>';
+  }
+}
 
     const medals = ['🥇', '🥈', '🥉'];
     lbList.innerHTML = entries.map((e, i) => `
