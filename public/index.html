@@ -1240,6 +1240,17 @@ function showHubView(view) {
     hist.style.pointerEvents = view === 'history' ? 'auto' : 'none';
   }
 }
+
+function closeSelectMenu() {
+  const m = document.getElementById('game-select-menu');
+  if (m) { m.style.display = 'none'; m.style.pointerEvents = 'none'; }
+  ['game-shop-screen', 'game-history-screen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.style.pointerEvents = 'none'; }
+  });
+  showHubView('main');
+}
+	
   window.storage = {
     async get(key, shared = false) {
       try {
@@ -3216,17 +3227,9 @@ function refuseCookies() {
 }
 </script>
 	
+<script>
 
 
-function closeSelectMenu() {
-  const m = document.getElementById('game-select-menu');
-  if (m) { m.style.display = 'none'; m.style.pointerEvents = 'none'; }
-  ['game-shop-screen', 'game-history-screen'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.style.display = 'none'; el.style.pointerEvents = 'none'; }
-  });
-  showHubView('main');
-}
 let cheatSeq = '';
 window.addEventListener('keydown', (e) => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
