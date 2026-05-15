@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <title>Galerie — Selenetykos</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --moon: #FFFFE3;
+      --dark: #0a0c14;
+      --panel: rgba(255,255,227,0.05);
+      --accent: #7eb8f7;
+      --glow: #a78bfa;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Exo 2', sans-serif;
+      background: var(--dark);
+      color: var(--moon);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #stars-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .page-wrap {
+      position: relative; z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .page-wrap.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--dark); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 32px;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-moon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffff0, #d4d0a8 60%, #9a9070);
+      box-shadow: 0 0 40px 10px rgba(255,255,200,0.2);
+      animation: moonSpin 3s linear infinite;
+    }
+    @keyframes moonSpin { to { transform: rotate(360deg); } }
+    .loader-text { font-family: 'Orbitron'; color: var(--moon); letter-spacing: 0.3em; font-size: 0.8rem; text-transform: uppercase; }
+    .loader-bar-wrap { width: 200px; height: 2px; background: rgba(255,255,227,0.1); }
+    .loader-bar { height: 100%; width: 0%; background: var(--accent); animation: loadFill 2.5s ease-out forwards; }
+    @keyframes loadFill { to { width: 100%; } }
+
+    /* ── HEADER & NAV ── */
+    header { text-align: center; padding: 60px 0 40px; }
+    .page-tag { font-family: 'Orbitron'; font-size: 0.6rem; letter-spacing: 0.5em; color: var(--accent); text-transform: uppercase; margin-bottom: 15px; }
+    h1 { font-family: 'Orbitron'; font-size: clamp(1.5rem, 4vw, 2.8rem); font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; background: linear-gradient(135deg, #fff8c0, var(--glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    nav { display: flex; gap: 16px; justify-content: center; margin-bottom: 50px; }
+    nav a { font-family: 'Orbitron'; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; color: var(--moon); padding: 10px 24px; border: 1px solid rgba(255,255,227,0.2); background: var(--panel); transition: all 0.3s; }
+    nav a:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 15px rgba(126,184,247,0.2); }
+
+    /* ── DUAL GALLERY STRUCTURE ── */
+    .dual-gallery {
+      display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;
+    }
+    .gallery-column {
+      flex: 1; min-width: 320px; max-width: 550px;
+    }
+    .col-title {
+      font-family: 'Orbitron'; font-size: 0.8rem; color: var(--accent); 
+      margin-bottom: 25px; letter-spacing: 4px; text-transform: uppercase; text-align: center;
+    }
+
+    .viewer-box {
+      position: relative; background: #000; border: 1px solid rgba(255,255,227,0.1);
+      border-radius: 4px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .slide-stage {
+      width: 100%; height: 350px; display: flex; align-items: center; justify-content: center;
+    }
+    .slide-stage img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+      transition: opacity 0.4s ease;
+    }
+
+    .nav-arrows {
+      position: absolute; top: 50%; width: 100%; transform: translateY(-50%);
+      display: flex; justify-content: space-between; padding: 0 15px; pointer-events: none;
+    }
+    .nav-arrows button {
+      width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--accent);
+      background: rgba(10, 12, 20, 0.7); color: var(--accent); cursor: pointer;
+      pointer-events: auto; transition: all 0.3s; font-size: 1.2rem;
+    }
+    .nav-arrows button:hover { background: var(--accent); color: var(--dark); box-shadow: 0 0 15px var(--accent); }
+
+    .description-area {
+      padding: 25px; background: rgba(255,255,227,0.02);
+      border-top: 1px solid rgba(255,255,227,0.08); min-height: 100px;
+    }
+    .description-area p {
+      font-size: 0.85rem; color: rgba(255,255,227,0.6); line-height: 1.7; text-align: center;
+    }
+
+    footer {
+      margin-top: 80px; text-align: center; padding: 30px;
+      border-top: 1px solid rgba(255,255,227,0.08); font-size: 0.7rem;
+      color: rgba(255,255,227,0.2); font-family: 'Orbitron'; letter-spacing: 2px;
+    }
+
+    .ia-disclaimer {
+      text-align: center;
+      font-size: 0.6rem;
+      color: rgba(255, 255, 227, 0.15); /* Très sombre, se fond dans le décor */
+      margin-top: 40px;
+      font-style: italic;
+      letter-spacing: 1px;
+      font-family: 'Exo 2', sans-serif;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-moon"></div>
+  <div class="loader-text">Accès aux données visuelles...</div>
+  <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+</div>
+
+<canvas id="stars-canvas"></canvas>
+
+<div class="page-wrap" id="main">
+  <header>
+    <div class="page-tag">// Base Selenetykos Archives</div>
+    <h1>Exploration Visuelle</h1>
+  </header>
+
+  <nav>
+    <a href="contact5.html"><span>🛰️ Vue 3D</span></a>
+    <a href="index.html"><span>🏠 Accueil</span></a>
+  </nav>
+
+  <div class="dual-gallery">
+    <div class="gallery-column">
+      <h2 class="col-title">Structure Extérieure</h2>
+      <div class="viewer-box">
+        <div class="slide-stage">
+          <img id="ext-img" src="" alt="Vue Extérieure">
+        </div>
+        <div class="nav-arrows">
+          <button onclick="moveSlide('ext', -1)">&#10094;</button>
+          <button onclick="moveSlide('ext', 1)">&#10095;</button>
+        </div>
+        <div class="description-area">
+          <p id="ext-desc"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gallery-column">
+      <h2 class="col-title">Aménagements Intérieurs</h2>
+      <div class="viewer-box">
+        <div class="slide-stage">
+          <img id="int-img" src="" alt="Vue Intérieure">
+        </div>
+        <div class="nav-arrows">
+          <button onclick="moveSlide('int', -1)">&#10094;</button>
+          <button onclick="moveSlide('int', 1)">&#10095;</button>
+        </div>
+        <div class="description-area">
+          <p id="int-desc"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="ia-disclaimer">
+    Note : Les visuels présentés sont des concepts illustratifs générés par intelligence artificielle pour représenter le potentiel de la base.
+  </p>
+
+  <footer>
+    PROJET SELENETYKOS — MOON CAMP CHALLENGE 2024
+  </footer>
+</div>
+
+<script>
+  // CONFIGURATION DES IMAGES (Modifie les noms de fichiers et textes ici)
+  const data = {
+    ext: [
+      { src: 'ext1.jpeg', desc: "Base lunaire : Un complexe modulaire pressurisé et protégé par le régolithe pour l'habitation longue durée." },
+      { src: 'ext2.jpeg', desc: "Garage à rover : Une baie de maintenance et de recharge pour les véhicules d'exploration de surface." },
+      { src: 'ext3.jpeg', desc: "Mini-réacteur nucléaire : Une unité à fission compacte garantissant une énergie stable durant la nuit lunaire." }
+    ],
+
+    int: [
+      { src: 'int1.jpeg', desc: "Dôme principal : Le centre névralgique regroupant le commandement, le sport et la vie sociale." },
+      { src: 'int2.jpeg', desc: "Laboratoires : Un espace scientifique de pointe dédié à l'analyse géologique et biologique." },
+      { src: 'int3.jpeg', desc: "Serre : Une unité hydroponique optimisée pour la production d'oxygène et de nourriture fraîche." },
+      { src: 'int4.png', desc: "Recycleur d'eau : Un système de filtration en cycle fermé essentiel à l'autonomie hydrique de l'équipage." }
+    ]
+  };
+
+  let idx = { ext: 0, int: 0 };
+
+  function updateGallery(type) {
+    const imgEl = document.getElementById(type + '-img');
+    const descEl = document.getElementById(type + '-desc');
+    
+    imgEl.style.opacity = 0;
+    setTimeout(() => {
+      imgEl.src = data[type][idx[type]].src;
+      descEl.textContent = data[type][idx[type]].desc;
+      imgEl.style.opacity = 1;
+    }, 300);
+  }
+
+  function moveSlide(type, dir) {
+    idx[type] = (idx[type] + dir + data[type].length) % data[type].length;
+    updateGallery(type);
+  }
+
+  // Initialisation
+  window.addEventListener('load', () => {
+    updateGallery('ext');
+    updateGallery('int');
+    
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('main').classList.add('visible');
+    }, 2800);
+  });
+
+  // BACKGROUND STARS
+  (function() {
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    function init() {
+      stars = Array.from({length:200}, () => ({
+        x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+        r: Math.random()*1.2+0.2, speed: Math.random()*0.005+0.001, phase: Math.random()*Math.PI*2
+      }));
+    }
+    function draw(t) {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      stars.forEach(s => {
+        const a = 0.3 + 0.7*Math.abs(Math.sin(t*s.speed+s.phase));
+        ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,255,220,${a})`; ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    resize(); init(); requestAnimationFrame(draw);
+    window.addEventListener('resize', () => { resize(); init(); });
+  })();
+</script>
+
+</body>
+</html>
