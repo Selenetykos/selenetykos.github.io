@@ -1224,10 +1224,22 @@ canvas {
     if (m) { m.style.display = 'flex'; m.style.pointerEvents = 'auto'; }
     showHubView('main');
     updateAccountUI();
-  },
+  }
 
-	
-  
+function showHubView(view) {
+  const shop = document.getElementById('game-shop-screen');
+  const hist = document.getElementById('game-history-screen');
+  const main = document.getElementById('hub-main-view');
+  if (main) main.style.display = view === 'main' ? 'block' : 'none';
+  if (shop) {
+    shop.style.display = view === 'shop' ? 'flex' : 'none';
+    shop.style.pointerEvents = view === 'shop' ? 'auto' : 'none';
+  }
+  if (hist) {
+    hist.style.display = view === 'history' ? 'flex' : 'none';
+    hist.style.pointerEvents = view === 'history' ? 'auto' : 'none';
+  }
+}
   window.storage = {
     async get(key, shared = false) {
       try {
