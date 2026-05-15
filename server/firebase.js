@@ -1,7 +1,6 @@
 const admin = require("firebase-admin");
-require("dotenv").config();
 
-// On récupère la clé secrète depuis les variables d'environnement
+// Cette ligne va lire la variable que tu as créée sur Render
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
