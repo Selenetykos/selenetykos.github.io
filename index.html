@@ -1212,80 +1212,54 @@ canvas {
   </footer>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",
-    authDomain: "selenetykos-63361.firebaseapp.com",
-    projectId: "selenetykos-63361",
-    storageBucket: "selenetykos-63361.firebasestorage.app",
-    messagingSenderId: "284139581187",
-    appId: "1:284139581187:web:86c38f70b37cebcfae8336"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // === SHIM window.storage → Firestore ===
-  // Les clés sont de type "collection/docId" ou "prefix:suffix"
-  // On stocke tout dans une collection "storage" avec des docs dont l'id est la clé (: remplacés par _)
-
-  function keyToDocId(key) {
-    // Firestore n'accepte pas les ":" dans les IDs de document
-    return key.replace(/:/g, '__COLON__');
-  }
-
+<script>
+  // === CONFIGURATION PROXY (Remplace Firebase) ===
+  // Ce système remplace window.storage pour passer par ton serveur Node.js
+  
   window.storage = {
     async get(key, shared = false) {
       try {
-        const docId = keyToDocId(key);
-        const ref = doc(db, 'storage', docId);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) return null;
-        return { key, value: snap.data().value, shared };
+        const response = await fetch(`/api/storage?key=${encodeURIComponent(key)}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return { key, value: data.value, shared };
       } catch (e) { console.warn('storage.get error', e); return null; }
     },
 
     async set(key, value, shared = false) {
       try {
-        const docId = keyToDocId(key);
-        const ref = doc(db, 'storage', docId);
-        await setDoc(ref, { value, key, shared, updatedAt: Date.now() });
+        const response = await fetch('/api/storage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value, shared })
+        });
+        if (!response.ok) return null;
         return { key, value, shared };
       } catch (e) { console.warn('storage.set error', e); return null; }
     },
 
     async delete(key, shared = false) {
       try {
-        const docId = keyToDocId(key);
-        const ref = doc(db, 'storage', docId);
-        await deleteDoc(ref);
+        const response = await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) return null;
         return { key, deleted: true, shared };
       } catch (e) { console.warn('storage.delete error', e); return null; }
     },
 
     async list(prefix = '', shared = false) {
       try {
-        const col = collection(db, 'storage');
-        const snap = await getDocs(col);
-        const prefixEncoded = keyToDocId(prefix);
-        const keys = [];
-        snap.forEach(d => {
-          const originalKey = d.data().key || d.id.replace(/__COLON__/g, ':');
-          if (originalKey.startsWith(prefix)) keys.push(originalKey);
-        });
-        return { keys, prefix, shared };
+        const response = await fetch(`/api/storage/list?prefix=${encodeURIComponent(prefix)}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return { keys: data.keys, prefix, shared };
       } catch (e) { console.warn('storage.list error', e); return null; }
     }
   };
 
-  console.log('✅ Firebase + window.storage shim initialisé');
-</script>
-
-<script>
+  console.log('✅ Proxy Bridge initialisé (Réseau scolaire contourné)');
+</script><script>
   /* ── LOADER ── */
   window.addEventListener('load', () => {
     setTimeout(() => {
@@ -3081,28 +3055,30 @@ async function checkWeekReset() {
   } catch (e) { console.warn('checkWeekReset error:', e); }
 }
 
+// === CONFIGURATION PROXY ===
+// Plus besoin de clés API ici, le serveur s'en occupe !
+
 // === LEADERBOARD ===
 async function loadLeaderboard() {
   const lbList = document.getElementById('lb-list');
   try {
-    const ck = weekKey(getWeekNumber());
-    const result = await window.storage.list(`scores:${ck}:`, true).catch(() => null);
-    if (!result || result.keys.length === 0) { lbList.innerHTML = '<div class="lb-loading">Aucun score cette semaine.</div>'; return; }
-    const entries = [];
-    for (const key of result.keys) {
-      // On ignore les clés d'index pseudo (scores:ck:pseudo:xxx)
-      if (key.includes(':pseudo:')) continue;
-      const item = await window.storage.get(key, true).catch(() => null);
-      if (item) entries.push(JSON.parse(item.value));
+    const response = await fetch('/api/leaderboard');
+    const entries = await response.json();
+    
+    if (!entries || entries.length === 0) { 
+        lbList.innerHTML = '<div class="lb-loading">Aucun score cette semaine.</div>'; 
+        return; 
     }
-    entries.sort((a, b) => b.score - a.score);
+
     const medals = ['🥇', '🥈', '🥉'];
-    lbList.innerHTML = entries.slice(0, 10).map((e, i) => `
+    lbList.innerHTML = entries.map((e, i) => `
       <div style="display:flex; justify-content:space-between; padding:6px 4px; border-bottom:1px solid rgba(255,255,255,0.05);">
         <span>${medals[i] || `${i+1}.`} ${e.pseudo}</span>
         <span style="color:var(--accent)">${Math.floor(e.score)}</span>
       </div>`).join('');
-  } catch (e) { lbList.innerHTML = '<div class="lb-loading">Erreur de chargement.</div>'; }
+  } catch (e) { 
+    lbList.innerHTML = '<div class="lb-loading">Erreur de chargement.</div>'; 
+  }
 }
 
 // === SAVE SCORE ===
@@ -3110,93 +3086,82 @@ async function saveScore() {
   const pseudo = document.getElementById('pseudo-input').value.trim();
   const feedback = document.getElementById('save-feedback');
   const btn = document.getElementById('save-score-btn');
+
   if (!pseudo) { feedback.textContent = '⚠️ Entre un pseudo !'; return; }
   if (btn.disabled) return;
   btn.disabled = true;
+
+  // Récupère le score depuis ton jeu
   const finalScore = Math.floor(Number(window._gameScore) || 0);
-  const current = getWeekNumber();
-  const ck = weekKey(current);
   feedback.textContent = 'Sauvegarde du score…';
 
-  let leaderboardMsg = '';
   try {
-    const pseudoKey = `scores:${ck}:pseudo:${pseudo.toLowerCase()}`;
-    const existing = await window.storage.get(pseudoKey, true).catch(() => null);
+    const response = await fetch('/api/save-score', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ pseudo, score: finalScore })
+    });
+    const result = await response.json();
 
-    if (existing) {
-      const existingEntry = JSON.parse(existing.value);
-      if (finalScore <= existingEntry.score) {
-        leaderboardMsg = `Record hebdo inchangé : ${Math.floor(existingEntry.score)} pts.`;
-      } else {
-        await window.storage.delete(existingEntry.dataKey, true).catch(() => {});
-        const dataKey = `scores:${ck}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const entry = { pseudo, score: finalScore, date: new Date().toISOString(), week: current.week, year: current.year, dataKey };
-        const savedScore = await window.storage.set(dataKey, JSON.stringify(entry), true);
-        const savedIndex = await window.storage.set(pseudoKey, JSON.stringify(entry), true);
-        if (!savedScore || !savedIndex) throw new Error('Score non sauvegardé');
-        leaderboardMsg = `Nouveau record : ${finalScore} pts !`;
-      }
-    } else {
-      const dataKey = `scores:${ck}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const entry = { pseudo, score: finalScore, date: new Date().toISOString(), week: current.week, year: current.year, dataKey };
-      const savedScore = await window.storage.set(dataKey, JSON.stringify(entry), true);
-      const savedIndex = await window.storage.set(pseudoKey, JSON.stringify(entry), true);
-      if (!savedScore || !savedIndex) throw new Error('Score non sauvegardé');
-      leaderboardMsg = `Score sauvegardé : ${finalScore} pts.`;
-    }
-  } catch (e) {
-    console.warn(e);
-    leaderboardMsg = 'Classement indisponible, score gardé localement.';
-  }
+    // Gestion de la réponse du serveur
+    let creditMsg = "";
+    if (finalScore >= 1000) creditMsg = " + Points Boutique !";
 
-  let creditMsg = '';
-  try {
-    if (finalScore >= 1000) {
-      const profile = await ensureScoreProfile(pseudo);
-      const credit = await creditRocketPoints(profile, finalScore, lastRocketRunId);
-      creditMsg = credit.reason;
-      if (!profile.pin) creditMsg += ' Compte boutique créé automatiquement.';
-    } else {
-      creditMsg = 'Score sous 1000 : pas de points boutique.';
-    }
+    feedback.textContent = `Sauvegarde OK. ${result.msg}${creditMsg}`;
+    feedback.style.color = '#4ade80';
+    
+    // Rafraîchir le tableau après la sauvegarde
+    loadLeaderboard();
   } catch (e) {
-    console.warn(e);
-    creditMsg = 'Points boutique non ajoutés, réessaie connecté.';
+    console.error(e);
+    feedback.textContent = 'Erreur serveur (blocage réseau ?)';
     btn.disabled = false;
   }
-
-  feedback.textContent = `Sauvegarde OK. ${leaderboardMsg} · ${creditMsg}`;
-  feedback.style.color = '#4ade80';
-  loadLeaderboard().catch(() => {});
 }
 
 // === HISTORIQUE ===
 async function openHistory() {
+  // Ouvre le menu si nécessaire
   const hub = document.getElementById('game-select-menu');
   if (!hub || hub.style.display !== 'flex') openSelectMenu();
   showHubView('history');
+
   const histList = document.getElementById('history-list');
   histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Chargement…</div>';
+  
   try {
-    const result = await window.storage.list('history:', true).catch(() => null);
-    if (!result || result.keys.length === 0) { histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Aucune semaine archivée pour l\'instant.</div>'; return; }
-    const archives = [];
-    for (const key of result.keys) {
-      const item = await window.storage.get(key, true).catch(() => null);
-      if (item) archives.push(JSON.parse(item.value));
+    const response = await fetch('/api/history');
+    const archives = await response.json();
+
+    if (!archives || archives.length === 0) {
+        histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Aucun historique.</div>';
+        return;
     }
-    archives.sort((a, b) => b.year !== a.year ? b.year - a.year : b.week - a.week);
+
     const medals = ['🥇', '🥈', '🥉'];
     histList.innerHTML = archives.map(arch => `
       <div style="margin-bottom:16px;">
-        <div style="font-family:'Orbitron',monospace; font-size:0.75rem; color:var(--accent); margin-bottom:6px; letter-spacing:0.1em;">🗓️ ${arch.label}</div>
+        <div style="font-family:'Orbitron',monospace; font-size:0.75rem; color:var(--accent); margin-bottom:6px; letter-spacing:0.1em;">🗓️ Semaine ${arch.label}</div>
         ${arch.top3.map((e, i) => `
           <div style="display:flex; justify-content:space-between; padding:5px 8px; background:rgba(255,255,255,0.04); border-radius:4px; margin-bottom:3px;">
             <span>${medals[i]} ${e.pseudo}</span>
             <span style="color:var(--accent); font-family:'Orbitron',monospace;">${Math.floor(e.score)}</span>
           </div>`).join('')}
       </div>`).join('');
-  } catch (e) { histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Erreur.</div>'; }
+  } catch (e) { 
+    histList.innerHTML = '<div style="text-align:center; opacity:0.5;">Erreur historique.</div>'; 
+  }
+}
+
+// === INITIALISATION ===
+function openGame() {
+  const ov = document.getElementById('game-overlay');
+  ov.style.display = 'flex';
+  ov.style.pointerEvents = 'auto';
+  showScreen('title');
+  
+  // On charge le leaderboard immédiatement via le proxy
+  loadLeaderboard();
 }
 
 // === OPEN / CLOSE ===
@@ -4329,58 +4294,81 @@ function tdGameOver() {
   if (window.sounds&&window.sounds.dead) window.sounds.dead.play();
 }
 
-async function loadTDLeaderboard(targetId='td-lb-list') {
-  const el=document.getElementById(targetId); if(!el) return;
-  el.innerHTML='<div style="color:#555;font-size:11px;font-family:Orbitron,monospace;text-align:center;padding:10px;">Chargement…</div>';
+// === TOWER DEFENSE LEADERBOARD ===
+async function loadTDLeaderboard(targetId = 'td-lb-list') {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.innerHTML = '<div style="color:#555;font-size:11px;font-family:Orbitron,monospace;text-align:center;padding:10px;">Chargement…</div>';
+  
   try {
-    const {getFirestore,collection,query,orderBy,limit,getDocs}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const {initializeApp,getApps}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const cfg={apiKey:"AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",authDomain:"selenetykos-63361.firebaseapp.com",projectId:"selenetykos-63361"};
-    const app=getApps().length?getApps()[0]:initializeApp(cfg);
-    const db=getFirestore(app);
-    const snap=await getDocs(query(collection(db,'scores_td'),orderBy('score','desc'),limit(8)));
-    const entries=snap.docs.map(d=>d.data());
-    const medals=['🥇','🥈','🥉'];
-    if (!entries.length){el.innerHTML='<div style="color:#555;font-size:11px;font-family:Orbitron,monospace;text-align:center;padding:10px;">Aucun score encore !</div>';return;}
-    el.innerHTML=entries.map((e,i)=>`
-      <div style="display:flex;justify-content:space-between;padding:4px 8px;font-family:Orbitron,monospace;font-size:11px;color:${i===0?'#fbbf24':'#888'};">
-        <span>${i<3?medals[i]:i+1+'. '} ${String(e.name).replace(/</g,'&lt;')}</span>
-        <span style="color:${i===0?'#fbbf24':'#7eb8f7'}">⭐${e.score}</span>
+    const response = await fetch('/api/td-scores');
+    const entries = await response.json();
+    
+    const medals = ['🥇', '🥈', '🥉'];
+    if (!entries.length) {
+      el.innerHTML = '<div style="color:#555;font-size:11px;font-family:Orbitron,monospace;text-align:center;padding:10px;">Aucun score encore !</div>';
+      return;
+    }
+    
+    el.innerHTML = entries.map((e, i) => `
+      <div style="display:flex;justify-content:space-between;padding:4px 8px;font-family:Orbitron,monospace;font-size:11px;color:${i === 0 ? '#fbbf24' : '#888'};">
+        <span>${i < 3 ? medals[i] : i + 1 + '. '} ${String(e.name).replace(/</g, '&lt;')}</span>
+        <span style="color:${i === 0 ? '#fbbf24' : '#7eb8f7'}">⭐${e.score}</span>
       </div>`).join('');
-  } catch(err){ el.innerHTML='<div style="color:#f87171;font-size:11px;text-align:center;padding:10px;">Erreur connexion</div>'; }
+  } catch (err) {
+    el.innerHTML = '<div style="color:#f87171;font-size:11px;text-align:center;padding:10px;">Erreur connexion</div>';
+  }
 }
 
+// === TOWER DEFENSE SAVE SCORE ===
 window.saveTDScore = async function() {
-  const nameInput=document.getElementById('td-pseudo'), btn=document.getElementById('td-save-btn'), feedback=document.getElementById('td-save-feedback');
-  const name=nameInput.value.trim().substring(0,16);
-  if(!name){feedback.textContent="Entre ton pseudo !";feedback.style.color='#f87171';return;}
-  btn.disabled=true; feedback.textContent='Vérification…'; feedback.style.color='#a78bfa';
+  const nameInput = document.getElementById('td-pseudo'),
+        btn = document.getElementById('td-save-btn'),
+        feedback = document.getElementById('td-save-feedback');
+  
+  const name = nameInput.value.trim().substring(0, 16);
+  if (!name) { feedback.textContent = "Entre ton pseudo !"; feedback.style.color = '#f87171'; return; }
+  
+  btn.disabled = true;
+  feedback.textContent = 'Vérification…';
+  feedback.style.color = '#a78bfa';
+  
   try {
-    const {getFirestore,collection,query,where,getDocs,addDoc,deleteDoc,doc}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const {initializeApp,getApps}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const cfg={apiKey:"AIzaSyA0FB22ezDJ_9qKux85c95igfSxL-l187o",authDomain:"selenetykos-63361.firebaseapp.com",projectId:"selenetykos-63361"};
-    const app=getApps().length?getApps()[0]:initializeApp(cfg);
-    const db=getFirestore(app);
-    const finalScore=Math.floor(tdScore);
-    const existing=await getDocs(query(collection(db,'scores_td'),where('name','==',name)));
-    let bestPrev=-1;
-    existing.forEach(d=>{if(d.data().score>bestPrev)bestPrev=d.data().score;});
-    if(bestPrev!==-1&&finalScore<=bestPrev){feedback.textContent=`🌙 Record : ${bestPrev}. Fais mieux !`;feedback.style.color='#fbbf24';btn.disabled=false;return;}
-    for(const d of existing.docs) await deleteDoc(doc(db,'scores_td',d.id));
-    await addDoc(collection(db,'scores_td'),{name,score:finalScore,wave:tdWave,date:Date.now()});
+    const finalScore = Math.floor(tdScore);
+    const response = await fetch('/api/td-save-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score: finalScore, wave: tdWave })
+    });
+    
+    const result = await response.json();
+    
+    if (result.isRecord === false) {
+       feedback.textContent = `🌙 Record : ${result.best}. Fais mieux !`;
+       feedback.style.color = '#fbbf24';
+       btn.disabled = false;
+       return;
+    }
+
+    // Gestion Boutique (on garde ton appel local si la boutique n'est pas encore migrée)
     let creditMsg = '';
     try {
       const profile = await ensureScoreProfile(name);
       const credit = await creditTDPoints(profile, finalScore, lastTDRunId);
       creditMsg = credit.credited ? ` ${credit.reason}` : (credit.reason ? ` (${credit.reason})` : '');
     } catch (e) { creditMsg = ' (points boutique non crédités)'; }
-    feedback.textContent='✓ Score sauvegardé !' + creditMsg; feedback.style.color='#4ade80';
-    loadTDLeaderboard('td-lb-over');
-    if(window.sounds&&window.sounds.dead) window.sounds.dead.pause();
-  } catch(e){feedback.textContent='Erreur connexion.';feedback.style.color='#f87171';btn.disabled=false;}
-};
-</script>
 
+    feedback.textContent = '✓ Score sauvegardé !' + creditMsg;
+    feedback.style.color = '#4ade80';
+    loadTDLeaderboard('td-lb-over');
+    
+    if (window.sounds && window.sounds.dead) window.sounds.dead.pause();
+  } catch (e) {
+    feedback.textContent = 'Erreur connexion.';
+    feedback.style.color = '#f87171';
+    btn.disabled = false;
+  }
+};
 </body>
 	
 </html>
