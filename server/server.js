@@ -4,10 +4,14 @@ const cors = require('cors');
 const { db } = require('./firebase');
 const app = express();
 
+// --- CONFIGURATION ---
 app.use(cors());
 app.use(express.json());
+
+// Sert les fichiers statiques du dossier /public
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Helper pour la clé de la semaine (ex: week_2026_20)
 function getWeekKey() {
     const now = new Date();
     const oneJan = new Date(now.getFullYear(), 0, 1);
@@ -16,13 +20,14 @@ function getWeekKey() {
     return `week_${now.getFullYear()}_${week}`;
 }
 
+// Helper pour Firestore (remplace les : par des tirets)
 function keyToDocId(key) {
-    return key.replace(/:/g, '__COLON__');
+    return key ? key.replace(/:/g, '__COLON__') : "unknown_key";
 }
 
-// --- ROUTES POUR LA FUSÉE (ROCKET) ---
+// --- ROUTES API ---
 
-// Route pour l'historique/leaderboard
+// 1. Leaderboard Fusée (GET)
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const prefix = `score:${getWeekKey()}:`;
@@ -31,33 +36,49 @@ app.get('/api/leaderboard', async (req, res) => {
         snapshot.forEach(d => {
             const data = d.data();
             if (data.key && data.key.startsWith(prefix)) {
-                scores.push({ name: data.key.split(':').pop(), score: data.value });
+                scores.push({
+                    name: data.key.split(':').pop(),
+                    score: data.value
+                });
             }
         });
         scores.sort((a, b) => b.score - a.score);
         res.json(scores.slice(0, 10));
-    } catch (e) { res.status(500).json([]); }
+    } catch (e) {
+        res.status(500).json([]);
+    }
 });
 
-// Route générique de sauvegarde (Storage)
+// 2. Sauvegarde de score (POST) - VERSION ANTI-UNDEFINED
 app.post(['/api/storage', '/api/save-score'], async (req, res) => {
-    const { key, value, shared } = req.body;
-    // Si le jeu envoie juste name et score (format simple)
-    const finalKey = key || `score:${getWeekKey()}:${req.body.name}`;
-    const finalValue = value !== undefined ? value : req.body.score;
-
     try {
+        const b = req.body;
+        
+        // On cherche le pseudo partout où il pourrait être caché
+        const finalName = b.name || b.pseudo || b.blaze || b.pseudoInput || b['pseudo-input'] || "PiloteAnonyme";
+        
+        // On cherche le score
+        const finalValue = b.value !== undefined ? b.value : (b.score !== undefined ? b.score : 0);
+        
+        // On construit la clé
+        const finalKey = b.key || `score:${getWeekKey()}:${finalName}`;
+
         await db.collection('storage').doc(keyToDocId(finalKey)).set({
-            value: finalValue,
+            value: Number(finalValue),
             key: finalKey,
-            shared: shared || true,
+            shared: true,
             updatedAt: Date.now()
         });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+
+        console.log(`Score enregistré : ${finalName} - ${finalValue}`);
+        res.json({ success: true, savedAs: finalName });
+    } catch (e) {
+        console.error("Erreur save:", e.message);
+        res.status(500).json({ error: e.message });
+    }
 });
 
-// Récupération de profil ou score
+// 3. Récupération de profil (GET)
 app.get('/api/storage', async (req, res) => {
     const { key } = req.query;
     if (!key) return res.status(400).json({ error: "Clé manquante" });
@@ -68,8 +89,7 @@ app.get('/api/storage', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- ROUTES TOWER DEFENSE ---
-
+// 4. Leaderboard Tower Defense (GET)
 app.get('/api/td-scores', async (req, res) => {
     try {
         const snapshot = await db.collection('scores_td').orderBy('score', 'desc').limit(8).get();
@@ -77,6 +97,7 @@ app.get('/api/td-scores', async (req, res) => {
     } catch (e) { res.status(500).json([]); }
 });
 
+// 5. Sauvegarde Tower Defense (POST)
 app.post('/api/td-save-score', async (req, res) => {
     const { name, score, wave } = req.body;
     try {
@@ -89,15 +110,24 @@ app.post('/api/td-save-score', async (req, res) => {
         existing.forEach(d => batch.delete(d.ref));
         await batch.commit();
 
-        await db.collection('scores_td').add({ name, score: Math.floor(score), wave: wave || 0, date: Date.now() });
+        await db.collection('scores_td').add({
+            name,
+            score: Math.floor(score),
+            wave: wave || 0,
+            date: Date.now()
+        });
         res.json({ success: true, isRecord: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- ROUTE DE SECOURS (DOIT RESTER EN DERNIER) ---
+// --- REDIRECTION FINALE ---
+// Si aucune route n'a matché, on renvoie l'index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+// --- LANCEMENT ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { console.log(`Serveur prêt sur le port ${PORT}`); });
+app.listen(PORT, () => {
+    console.log(`Serveur Selenetykos ON (Port ${PORT})`);
+});
