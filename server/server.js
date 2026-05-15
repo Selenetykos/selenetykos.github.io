@@ -9,9 +9,10 @@ app.use(cors());
 app.use(express.json());
 
 // Sert tous les fichiers du dossier /public (index.html, boutique, images, js...)
+// Note : Vérifie bien que ton dossier s'appelle "public" sur GitHub (minuscules)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Helper pour calculer la clé de la semaine (format: week_2024_45)
+// Helper pour calculer la clé de la semaine (format: week_2026_20)
 function getWeekKey() {
     const now = new Date();
     const oneJan = new Date(now.getFullYear(), 0, 1);
@@ -27,7 +28,36 @@ function keyToDocId(key) {
 
 // --- ROUTES API : SYSTEME STORAGE (Rocket Game & Compatibilité) ---
 
-// Récupérer une donnée spécifique
+// 1. Récupérer le leaderboard (La route qui manquait et causait l'erreur JSON !)
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const prefix = `score:${getWeekKey()}:`;
+        const snapshot = await db.collection('storage').get();
+        const scores = [];
+        
+        snapshot.forEach(d => {
+            const data = d.data();
+            // On vérifie si la clé commence par le score de la semaine actuelle
+            if (data.key && data.key.startsWith(prefix)) {
+                scores.push({
+                    name: data.key.split(':').pop(),
+                    score: data.value
+                });
+            }
+        });
+
+        // Tri décroissant (plus gros score en premier)
+        scores.sort((a, b) => b.score - a.score);
+        
+        // On renvoie les 10 meilleurs
+        res.json(scores.slice(0, 10));
+    } catch (e) {
+        console.error("Erreur API Leaderboard:", e);
+        res.status(500).json([]); // Renvoie un tableau vide pour éviter de faire planter le JS client
+    }
+});
+
+// 2. Récupérer une donnée spécifique (ex: profil joueur)
 app.get('/api/storage', async (req, res) => {
     const { key } = req.query;
     if (!key) return res.status(400).json({ error: "Clé manquante" });
@@ -38,7 +68,7 @@ app.get('/api/storage', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Sauvegarder une donnée
+// 3. Sauvegarder une donnée
 app.post('/api/storage', async (req, res) => {
     const { key, value, shared } = req.body;
     try {
@@ -49,23 +79,23 @@ app.post('/api/storage', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Lister les clés (pour le leaderboard Rocket hebdomadaire)
+// 4. Lister les clés (Utile pour certaines fonctions de reset)
 app.get('/api/storage/list', async (req, res) => {
     const { prefix } = req.query;
     try {
         const snapshot = await db.collection('storage').get();
-        const keys = [];
+        const keysList = [];
         snapshot.forEach(d => {
             const originalKey = d.data().key;
             if (originalKey && originalKey.startsWith(prefix)) {
-                keys.push(originalKey);
+                keysList.push(originalKey);
             }
         });
-        res.json({ keys });
+        res.json({ keys: keysList });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Supprimer une clé
+// 5. Supprimer une clé
 app.delete('/api/storage', async (req, res) => {
     const { key } = req.query;
     try {
@@ -75,9 +105,8 @@ app.delete('/api/storage', async (req, res) => {
 });
 
 
-// --- ROUTES API : TOWER DEFENSE (Scores Classiques) ---
+// --- ROUTES API : TOWER DEFENSE ---
 
-// Récupérer le leaderboard TD
 app.get('/api/td-scores', async (req, res) => {
     try {
         const snapshot = await db.collection('scores_td')
@@ -89,7 +118,6 @@ app.get('/api/td-scores', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Sauvegarder un score TD (avec vérification de record)
 app.post('/api/td-save-score', async (req, res) => {
     const { name, score, wave } = req.body;
     try {
@@ -97,17 +125,14 @@ app.post('/api/td-save-score', async (req, res) => {
         let bestPrev = -1;
         existing.forEach(d => { if(d.data().score > bestPrev) bestPrev = d.data().score; });
 
-        // Si le nouveau score n'est pas meilleur, on refuse
         if (bestPrev !== -1 && score <= bestPrev) {
             return res.json({ isRecord: false, best: bestPrev });
         }
 
-        // Sinon, on nettoie les anciens scores de ce joueur
         const batch = db.batch();
         existing.forEach(d => batch.delete(d.ref));
         await batch.commit();
 
-        // Et on ajoute le nouveau record
         await db.collection('scores_td').add({
             name,
             score: Math.floor(score),
@@ -122,7 +147,8 @@ app.post('/api/td-save-score', async (req, res) => {
 
 // --- GESTION DES PAGES HTML ---
 
-// Si l'utilisateur tape une URL qui n'existe pas, on renvoie l'index
+// IMPORTANT : Cette route doit rester EN DERNIER. 
+// Elle renvoie l'index si aucune route API n'a été trouvée.
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
@@ -134,8 +160,7 @@ app.listen(PORT, () => {
     ===========================================
     🚀 SERVEUR PROXY SELENETYKOS ACTIF
     Port    : ${PORT}
-    Mode    : Anti-Blocage Scolaire
-    Statut  : Prêt à recevoir des requêtes
+    Statut  : Prêt pour le réseau scolaire
     ===========================================
     `);
 });
