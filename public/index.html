@@ -930,6 +930,13 @@ canvas {
   justify-content: center;
   backdrop-filter: blur(4px);
 }
+
+/* Forcer le tactile sur les menus de réglages */
+#td-settings-panel, #rocket-settings-panel, .td-settings-box, .td-settings-box * {
+  touch-action: auto !important;
+  pointer-events: auto !important;
+}
+	  
 #td-settings-panel.open,
 #rocket-settings-panel.open { display: flex; }
 #rocket-settings-panel {
