@@ -44,6 +44,43 @@ function normalizePseudo(pseudo) {
     return pseudo.toLowerCase().trim();
 }
 
+// Helper pour valider et sécuriser un profil joueur
+function validateAndSecureProfile(profile) {
+    if (!profile || typeof profile !== 'object') {
+        console.error('Profil invalide:', profile);
+        return null;
+    }
+    
+    // Sécuriser toutes les valeurs numériques
+    profile.wallet = Number(profile.wallet) || 0;
+    profile.totalEarned = Number(profile.totalEarned) || 0;
+    profile.bestScore = Number(profile.bestScore) || 0;
+    
+    // S'assurer que les tableaux existent
+    if (!Array.isArray(profile.ownedSkins)) profile.ownedSkins = ['classic'];
+    if (!Array.isArray(profile.ownedRocketSkins)) profile.ownedRocketSkins = ['r_classic'];
+    if (!Array.isArray(profile.ownedMusic)) profile.ownedMusic = ['m_rocket_default', 'm_td_default'];
+    
+    // S'assurer que les chaînes existent
+    profile.activeSkin = profile.activeSkin || 'classic';
+    profile.activeRocketSkin = profile.activeRocketSkin || 'r_classic';
+    profile.activeRocketMusic = profile.activeRocketMusic || 'm_rocket_default';
+    profile.activeTDMusic = profile.activeTDMusic || 'm_td_default';
+    
+    // S'assurer que l'objet creditedScores existe
+    if (!profile.creditedScores || typeof profile.creditedScores !== 'object') {
+        profile.creditedScores = {};
+    }
+    
+    // Vérifier qu'aucune valeur n'est NaN après sécurisation
+    if (Number.isNaN(profile.wallet) || Number.isNaN(profile.totalEarned) || Number.isNaN(profile.bestScore)) {
+        console.error('Profil contient des NaN après sécurisation:', profile);
+        return null;
+    }
+    
+    return profile;
+}
+
 // --- AUTH ROUTES ---
 
 // 1. Register - Créer un nouveau compte
@@ -82,8 +119,22 @@ app.post('/api/register', async (req, res) => {
             createdAt: Date.now()
         };
         
+        // Valider le profil avant sauvegarde
+        const validatedProfile = validateAndSecureProfile(newProfile);
+        if (!validatedProfile) {
+            return res.status(500).json({ error: "Erreur de validation du profil" });
+        }
+        
+        const profileString = JSON.stringify(validatedProfile);
+        console.log(`[REGISTER] Sauvegarde profil pour ${normalizedPseudo}:`, {
+            wallet: validatedProfile.wallet,
+            totalEarned: validatedProfile.totalEarned,
+            bestScore: validatedProfile.bestScore,
+            stringLength: profileString.length
+        });
+        
         await db.collection('storage').doc(keyToDocId(playerKey)).set({
-            value: JSON.stringify(newProfile),
+            value: profileString,
             key: playerKey,
             shared: false,
             updatedAt: Date.now()
@@ -101,7 +152,7 @@ app.post('/api/register', async (req, res) => {
         res.json({ 
             success: true, 
             token: sessionToken,
-            profile: { ...newProfile, pin: undefined } // Ne pas renvoyer le hash
+            profile: { ...validatedProfile, pin: undefined } // Ne pas renvoyer le hash
         });
     } catch (e) {
         console.error("Erreur register:", e.message);
@@ -236,8 +287,23 @@ app.post('/api/profile/update', async (req, res) => {
             updatedProfile.pin = hashSecret(updates.pin);
         }
         
+        // Valider et sécuriser le profil avant sauvegarde
+        const validatedProfile = validateAndSecureProfile(updatedProfile);
+        if (!validatedProfile) {
+            console.error(`[PROFILE UPDATE] Validation échouée pour ${session.pseudo}`);
+            return res.status(500).json({ error: "Erreur de validation du profil" });
+        }
+        
+        const profileString = JSON.stringify(validatedProfile);
+        console.log(`[PROFILE UPDATE] Sauvegarde profil pour ${session.pseudo}:`, {
+            wallet: validatedProfile.wallet,
+            totalEarned: validatedProfile.totalEarned,
+            bestScore: validatedProfile.bestScore,
+            stringLength: profileString.length
+        });
+        
         await db.collection('storage').doc(keyToDocId(playerKey)).set({
-            value: JSON.stringify(updatedProfile),
+            value: profileString,
             key: playerKey,
             shared: false,
             updatedAt: Date.now()
@@ -246,7 +312,7 @@ app.post('/api/profile/update', async (req, res) => {
         console.log(`Profil mis à jour : ${session.pseudo}`);
         res.json({ 
             success: true, 
-            profile: { ...updatedProfile, pin: undefined }
+            profile: { ...validatedProfile, pin: undefined }
         });
     } catch (e) {
         console.error("Erreur profile update:", e.message);
@@ -286,21 +352,28 @@ app.post(['/api/storage', '/api/save-score'], async (req, res) => {
         // On cherche le pseudo partout où il pourrait être caché
         const finalName = b.name || b.pseudo || b.blaze || b.pseudoInput || b['pseudo-input'] || "PiloteAnonyme";
         
-        // On cherche le score
-        const finalValue = b.value !== undefined ? b.value : (b.score !== undefined ? b.score : 0);
+        // On cherche le score avec validation stricte
+        let finalValue = 0;
+        if (b.value !== undefined && b.value !== null && !Number.isNaN(Number(b.value))) {
+            finalValue = Number(b.value);
+        } else if (b.score !== undefined && b.score !== null && !Number.isNaN(Number(b.score))) {
+            finalValue = Number(b.score);
+        }
+        
+        finalValue = Math.floor(finalValue);
         
         // On construit la clé
         const finalKey = b.key || `score:${getWeekKey()}:${finalName}`;
 
         // Sauvegarder le score
         await db.collection('storage').doc(keyToDocId(finalKey)).set({
-            value: Number(finalValue),
+            value: finalValue,
             key: finalKey,
             shared: true,
             updatedAt: Date.now()
         });
 
-        console.log(`Score enregistré : ${finalName} - ${finalValue}`);
+        console.log(`[SAVE SCORE] Score enregistré : ${finalName} - ${finalValue}`);
 
         // Ajouter les points au wallet du joueur (toujours, même si pas record)
         const playerKey = `player:${finalName.toLowerCase()}`;
@@ -310,23 +383,55 @@ app.post(['/api/storage', '/api/save-score'], async (req, res) => {
         if (profile) {
             try {
                 profile = typeof profile === 'string' ? JSON.parse(profile) : profile;
-                profile.wallet = (profile.wallet || 0) + Math.floor(Number(finalValue));
-                profile.totalEarned = (profile.totalEarned || 0) + Math.floor(Number(finalValue));
+                
+                // Sécuriser les valeurs avant calcul
+                const currentWallet = Number(profile.wallet) || 0;
+                const currentTotalEarned = Number(profile.totalEarned) || 0;
+                const pointsToAdd = finalValue;
+                
+                // Vérifier que les valeurs sont valides avant addition
+                if (Number.isNaN(currentWallet) || Number.isNaN(currentTotalEarned) || Number.isNaN(pointsToAdd)) {
+                    console.error(`[SAVE SCORE] Valeurs NaN détectées pour ${finalName}:`, {
+                        currentWallet,
+                        currentTotalEarned,
+                        pointsToAdd
+                    });
+                    throw new Error('Valeurs invalides détectées');
+                }
+                
+                profile.wallet = currentWallet + pointsToAdd;
+                profile.totalEarned = currentTotalEarned + pointsToAdd;
+                
+                // Valider et sécuriser le profil avant sauvegarde
+                const validatedProfile = validateAndSecureProfile(profile);
+                if (!validatedProfile) {
+                    console.error(`[SAVE SCORE] Validation échouée pour ${finalName}`);
+                    throw new Error('Validation du profil échouée');
+                }
+                
+                const profileString = JSON.stringify(validatedProfile);
+                console.log(`[SAVE SCORE] Sauvegarde profil pour ${finalName}:`, {
+                    wallet: validatedProfile.wallet,
+                    totalEarned: validatedProfile.totalEarned,
+                    bestScore: validatedProfile.bestScore,
+                    pointsAdded,
+                    stringLength: profileString.length
+                });
                 
                 await db.collection('storage').doc(keyToDocId(playerKey)).set({
-                    value: JSON.stringify(profile),
+                    value: profileString,
                     key: playerKey,
                     shared: false,
                     updatedAt: Date.now()
                 });
                 
-                console.log(`Wallet mis à jour pour ${finalName}: ${profile.wallet} points`);
+                console.log(`Wallet mis à jour pour ${finalName}: ${validatedProfile.wallet} points`);
             } catch (e) {
                 console.error("Erreur wallet update:", e.message);
             }
         }
 
-        res.json({ success: true, savedAs: finalName, pointsAdded: Math.floor(Number(finalValue)) });
+        res.json({ success: true, savedAs: finalName, pointsAdded: finalValue });
     } catch (e) {
         console.error("Erreur save:", e.message);
         res.status(500).json({ error: e.message });
