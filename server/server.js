@@ -49,7 +49,7 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// 2. Sauvegarde de score (POST) - VERSION ANTI-UNDEFINED
+// 2. Sauvegarde de score (POST) - VERSION ANTI-UNDEFINED + WALLET POINTS
 app.post(['/api/storage', '/api/save-score'], async (req, res) => {
     try {
         const b = req.body;
@@ -63,6 +63,7 @@ app.post(['/api/storage', '/api/save-score'], async (req, res) => {
         // On construit la clé
         const finalKey = b.key || `score:${getWeekKey()}:${finalName}`;
 
+        // Sauvegarder le score
         await db.collection('storage').doc(keyToDocId(finalKey)).set({
             value: Number(finalValue),
             key: finalKey,
@@ -71,7 +72,32 @@ app.post(['/api/storage', '/api/save-score'], async (req, res) => {
         });
 
         console.log(`Score enregistré : ${finalName} - ${finalValue}`);
-        res.json({ success: true, savedAs: finalName });
+
+        // Ajouter les points au wallet du joueur (toujours, même si pas record)
+        const playerKey = `player:${finalName.toLowerCase()}`;
+        const playerDoc = await db.collection('storage').doc(keyToDocId(playerKey)).get();
+        let profile = playerDoc.exists ? playerDoc.data().value : null;
+        
+        if (profile) {
+            try {
+                profile = typeof profile === 'string' ? JSON.parse(profile) : profile;
+                profile.wallet = (profile.wallet || 0) + Math.floor(Number(finalValue));
+                profile.totalEarned = (profile.totalEarned || 0) + Math.floor(Number(finalValue));
+                
+                await db.collection('storage').doc(keyToDocId(playerKey)).set({
+                    value: JSON.stringify(profile),
+                    key: playerKey,
+                    shared: false,
+                    updatedAt: Date.now()
+                });
+                
+                console.log(`Wallet mis à jour pour ${finalName}: ${profile.wallet} points`);
+            } catch (e) {
+                console.error("Erreur wallet update:", e.message);
+            }
+        }
+
+        res.json({ success: true, savedAs: finalName, pointsAdded: Math.floor(Number(finalValue)) });
     } catch (e) {
         console.error("Erreur save:", e.message);
         res.status(500).json({ error: e.message });
