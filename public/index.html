@@ -1786,7 +1786,7 @@ window.addEventListener('load', () => {
 </div>
 
 <!-- ─── TOWER DEFENSE OVERLAY ─── -->
-<div id="td-overlay" style="display:none; position:fixed; inset:0; background:#02020f; z-index:10000; flex-direction:column; align-items:center; justify-content:center; font-family:'Orbitron',monospace; color:#FFFFE3; overflow:auto; padding:62px 10px 18px;">
+<div id="td-overlay" style="display:none; position:fixed; inset:0; background:#02020f; z-index:10001; flex-direction:column; align-items:center; justify-content:center; font-family:'Orbitron',monospace; color:#FFFFE3; overflow:auto; padding:62px 10px 18px;">
 	<div id="secret-gold-trigger" style="position: absolute; top: 0; right: 0; width: 60px; height: 60px; z-index: 10009; cursor: pointer; opacity: 0; touch-action: manipulation;"></div>
 
     <div id="td-hud" style="width: min(420px, calc(100vw - 24px)); display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.72rem; letter-spacing: 0.15em; color: var(--accent);">
@@ -3367,6 +3367,9 @@ async function waitForStorage() {
 
 function openGame() {
   closeSelectMenu();
+  // Fermer le TD s'il était ouvert
+  const tdOv = document.getElementById('td-overlay');
+  if (tdOv) { tdOv.style.display = 'none'; tdOv.style.pointerEvents = 'none'; }
   const ov = document.getElementById('game-overlay');
   ov.style.display = 'flex';
   ov.style.pointerEvents = 'auto';
@@ -3374,6 +3377,7 @@ function openGame() {
   updateAccountUI();
   loadLeaderboard().catch(e => console.warn('openGame loadLeaderboard error:', e));
 }
+	
 function rocketBackToMenu() {
   gameActive = false;
   if (animId) cancelAnimationFrame(animId);
@@ -3415,6 +3419,9 @@ window.addEventListener('keydown', (e) => {
 
 // ─── TOWER DEFENSE ───
 function openTD() {
+  // Fermer la Fusée si elle était ouverte
+  const ov = document.getElementById('game-overlay');
+  if (ov) { ov.style.display = 'none'; ov.style.pointerEvents = 'none'; }
   const tdOv = document.getElementById('td-overlay');
   tdOv.style.display = 'flex';
   tdOv.style.pointerEvents = 'auto';
@@ -3425,6 +3432,7 @@ function openTD() {
   tdShowScreen('title');
   loadTDLeaderboard('td-lb-list');
 }
+	
 function tdBackFromPlay() {
   tdGameActive = false;
   pauseGameMusic();
