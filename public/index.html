@@ -1749,7 +1749,7 @@ window.addEventListener('load', () => {
       <button type="button" class="orbit-hub-tile orbit-hub-tile-history" onclick="openHistory()">
         <span class="orbit-hub-tile-icon">📜</span><span class="orbit-hub-tile-label">Historique</span><span class="orbit-hub-tile-hint">Panthéon hebdo</span>
       </button>
-      <button type="button" class="orbit-hub-tile orbit-hub-tile-rocket" onclick="openGame(); closeSelectMenu();">
+      <button type="button" class="orbit-hub-tile orbit-hub-tile-rocket" onclick="openGame();">
         <span class="orbit-hub-tile-icon">🚀</span><span class="orbit-hub-tile-label">Fusée Dodge</span><span class="orbit-hub-tile-hint">Évite les astéroïdes</span>
       </button>
       <button type="button" class="orbit-hub-tile orbit-hub-tile-td" onclick="closeSelectMenu(); openTD();">
@@ -3366,6 +3366,7 @@ async function waitForStorage() {
 }
 
 function openGame() {
+  closeSelectMenu();
   const ov = document.getElementById('game-overlay');
   ov.style.display = 'flex';
   ov.style.pointerEvents = 'auto';
@@ -3517,6 +3518,11 @@ function startTD() {
 
 function onTDTouch(e) {
   if (!tdGameActive) return;
+  
+  // ← AJOUTER : si les settings sont ouverts, on laisse le touch passer
+  const settingsPanel = document.getElementById('td-settings-panel');
+  if (settingsPanel && settingsPanel.classList.contains('open')) return;
+
   const rect = tdCanvas.getBoundingClientRect();
   const t = e.touches[0];
   if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) {
