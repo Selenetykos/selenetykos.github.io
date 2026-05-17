@@ -2507,7 +2507,7 @@ async function creditRocketPoints(finalScore, runId) {
 // Points = score ÷ 100, déduplication par runKey.
 async function creditTDPoints(score, runId) {
   if (!currentPlayer || !getAuthToken()) return { credited: 0, reason: 'Non connecté.' };
-  const pts = Math.floor(Number(score) / 100);
+  const pts = Math.floor((Number(score) / 100) * 3);
   if (pts <= 0) return { credited: 0, reason: 'Score trop faible pour créditer des points.' };
   const runKey = runId ? `td-${runId}` : `td-manual-${Math.floor(Number(score) || 0)}-${Date.now()}`;
   try {
