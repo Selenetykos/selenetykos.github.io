@@ -3527,7 +3527,7 @@ function startTD() {
   activeMapSkin = getActiveSkin();
   tdCanvas = document.getElementById('tdCanvas');
   tdCtx = tdCanvas.getContext('2d');
-  tdLives=24; tdGold=220; tdWave=0; tdScore=0;
+  tdLives=30; tdGold=220; tdWave=0; tdScore=0;
   tdEnemies=[]; tdTowers=[]; tdProjectiles=[]; tdParticles=[];
   tdSpawnQueue=[]; tdSpawnTimer=0; tdWaveActive=false; tdBetweenWaves=true; tdBetweenTimer=3000;
   tdSelectedTower='laser'; tdInspectedTower=null; tdPaused=false; tdGameActive=true; tdLastTime=performance.now();
@@ -3607,7 +3607,7 @@ function getTowerRange(tower) {
   return Math.round(tower.def.range + (tower.upgrades || 0) * 4);
 }
 function getUpgradeCost(tower) {
-  return Math.floor(tower.def.cost * 0.7 * Math.pow(1.42, tower.upgrades || 0));
+  return Math.floor(tower.def.cost * 1.2 * Math.pow(1.42, tower.upgrades || 0));
 }
 function getTowerSellValue(tower) {
   const spent = tower.spent || tower.def.cost;
