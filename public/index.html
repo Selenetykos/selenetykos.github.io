@@ -1749,7 +1749,7 @@ window.addEventListener('load', () => {
       <button type="button" class="orbit-hub-tile orbit-hub-tile-history" onclick="openHistory()">
         <span class="orbit-hub-tile-icon">📜</span><span class="orbit-hub-tile-label">Historique</span><span class="orbit-hub-tile-hint">Panthéon hebdo</span>
       </button>
-      <button type="button" class="orbit-hub-tile orbit-hub-tile-rocket" onclick="openGame();">
+      <button type="button" class="orbit-hub-tile orbit-hub-tile-rocket" onclick="closeSelectMenu(); openGame();">
         <span class="orbit-hub-tile-icon">🚀</span><span class="orbit-hub-tile-label">Fusée Dodge</span><span class="orbit-hub-tile-hint">Évite les astéroïdes</span>
       </button>
       <button type="button" class="orbit-hub-tile orbit-hub-tile-td" onclick="closeSelectMenu(); openTD();">
@@ -3519,8 +3519,8 @@ function startTD() {
   buildTowerBar();
   cancelAnimationFrame(tdAnimId);
   tdCanvas.onclick = onTDClick;
+  document.removeEventListener('touchstart', onTDTouch);
   document.addEventListener('touchstart', onTDTouch, {passive:false});
-  document.addEventListener('touchend', () => { touchTargetTD = null; });
   tdLoop(performance.now());
 }
 
