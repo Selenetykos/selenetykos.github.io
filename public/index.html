@@ -429,7 +429,7 @@
     top: 0; left: 0;
     width: 100%; height: 100%;
     background: radial-gradient(ellipse at center, #0a0c20 0%, #000008 100%);
-    z-index: 10000;
+    z-index: 10003;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -3367,7 +3367,6 @@ async function waitForStorage() {
 
 function openGame() {
   closeSelectMenu();
-  // Fermer le TD s'il était ouvert
   const tdOv = document.getElementById('td-overlay');
   if (tdOv) { tdOv.style.display = 'none'; tdOv.style.pointerEvents = 'none'; }
   const ov = document.getElementById('game-overlay');
