@@ -11,26 +11,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+      const { getFirestore, doc, setDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBUz06xBbcjkzt92XpH_G3SmafHVHYzgRw",
-      authDomain: "selenetykosadmin.firebaseapp.com",
-      projectId: "selenetykosadmin",
-      storageBucket: "selenetykosadmin.firebasestorage.app",
-      messagingSenderId: "83818263436",
-      appId: "1:83818263436:web:70aeb20834aef443f01ca9",
-      measurementId: "G-XZF6VERC95"
-    };
+      const firebaseConfig = {
+        apiKey: "AIzaSyBUz06xBbcjkzt92XpH_G3SmafHVHYzgRw",
+        authDomain: "selenetykosadmin.firebaseapp.com",
+        projectId: "selenetykosadmin",
+        storageBucket: "selenetykosadmin.firebasestorage.app",
+        messagingSenderId: "83818263436",
+        appId: "1:83818263436:web:70aeb20834aef443f01ca9",
+        measurementId: "G-XZF6VERC95"
+      };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    window._db = db;
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      window._db = db;
 
-    // Incrémente les vues à chaque visite
-    const ref = doc(db, "stats", "global");
-    setDoc(ref, { views: increment(1) }, { merge: true });
+      const ref = doc(db, "stats", "global");
+      setDoc(ref, { views: increment(1) }, { merge: true });
+    } catch(e) {
+      console.warn("Firebase init failed:", e);
+    }
   </script>
   <style>
     :root {
