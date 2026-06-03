@@ -1316,15 +1316,7 @@ function closeSelectMenu() {
   console.log('✅ Proxy Bridge initialisé (Réseau scolaire contourné)');
 </script><script>
   /* ── LOADER ── */
-  function hideLoader() {
-    document.getElementById('loader').classList.add('hidden');
-    document.getElementById('main').classList.add('visible');
-    if (typeof observeReveal === 'function') observeReveal();
-  }
-  // Fallback : se cache au bout de 4s quoi qu'il arrive
-  setTimeout(hideLoader, 4000);
-  // Normal : se cache 3s après load
-  window.addEventListener('load', () => setTimeout(hideLoader, 3000));
+
 
   /* ── STARS ── */
   (function() {
@@ -4796,6 +4788,22 @@ async function openAdminPanel() {
   });
 </script>
 
+<script>
+  // LOADER HIDE — placé en dernier, après tous les scripts
+  (function() {
+    function hideLoader() {
+      var loader = document.getElementById('loader');
+      var main = document.getElementById('main');
+      if (loader) loader.classList.add('hidden');
+      if (main) main.classList.add('visible');
+      if (typeof observeReveal === 'function') try { observeReveal(); } catch(e) {}
+    }
+    // Fallback absolu : 5 secondes
+    setTimeout(hideLoader, 5000);
+    // Dès que la page est chargée + 3s
+    window.addEventListener('load', function() { setTimeout(hideLoader, 3000); });
+  })();
+</script>
 
 </body>
 	
