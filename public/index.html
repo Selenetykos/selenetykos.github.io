@@ -4795,7 +4795,11 @@ async function openAdminPanel() {
       var loader = document.getElementById('loader');
       var main = document.getElementById('main');
       if (loader) loader.classList.add('hidden');
-      if (main) main.classList.add('visible');
+      if (main) {
+        main.classList.add('visible');
+        main.style.opacity = '1';
+        main.style.transform = 'translateY(0)';
+      }
       if (typeof observeReveal === 'function') try { observeReveal(); } catch(e) {}
     }
     // Fallback absolu : 5 secondes
