@@ -1316,13 +1316,15 @@ function closeSelectMenu() {
   console.log('✅ Proxy Bridge initialisé (Réseau scolaire contourné)');
 </script><script>
   /* ── LOADER ── */
-  window.addEventListener('load', () => {
-  setTimeout(() => {
+  function hideLoader() {
     document.getElementById('loader').classList.add('hidden');
     document.getElementById('main').classList.add('visible');
     if (typeof observeReveal === 'function') observeReveal();
-  }, 3000);
-});
+  }
+  // Fallback : se cache au bout de 4s quoi qu'il arrive
+  setTimeout(hideLoader, 4000);
+  // Normal : se cache 3s après load
+  window.addEventListener('load', () => setTimeout(hideLoader, 3000));
 
   /* ── STARS ── */
   (function() {
@@ -1729,13 +1731,7 @@ function trouverReponse(texte) {
   window.addEventListener('resize', () => { resize(); });
 })();
 
-/* ── LOADER HIDE ── */
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    document.getElementById('loader').classList.add('hidden');
-    document.getElementById('main').classList.add('visible');
-  }, 3000);
-});
+
 
 </script>		
 
@@ -2316,7 +2312,7 @@ let activeMapSkin = MAP_SKINS[0];
 
 // MOBILE & CHOCOLAT
 window.addEventListener('load', () => {
-  initGameOverlays();
+  try { initGameOverlays(); } catch(e) {}
   const cv = document.getElementById("gameCanvas");
   if (!cv) return;
   cv.addEventListener("touchstart", (e) => {
@@ -2327,14 +2323,15 @@ window.addEventListener('load', () => {
     e.preventDefault();
   }, { passive: false });
   cv.addEventListener("touchend", () => { keys["ArrowLeft"] = false; keys["ArrowRight"] = false; });
-  const saved = localStorage.getItem('selenetykos-player');
-  if (saved) {
-    currentPlayer = JSON.parse(saved);
-    document.getElementById('auth-name').value = currentPlayer.name || '';
-    document.getElementById('auth-pin').value = currentPlayer.pin || '';
-    loadPlayerProfile();
-  }
-
+  try {
+    const saved = localStorage.getItem('selenetykos-player');
+    if (saved) {
+      currentPlayer = JSON.parse(saved);
+      document.getElementById('auth-name').value = currentPlayer.name || '';
+      document.getElementById('auth-pin').value = currentPlayer.pin || '';
+      loadPlayerProfile();
+    }
+  } catch(e) {}
   const siteInput = document.getElementById('chat-input') || document.querySelector('input[type="text"]');
   if (siteInput) {
     siteInput.addEventListener('input', () => {
