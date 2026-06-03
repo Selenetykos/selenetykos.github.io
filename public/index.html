@@ -1317,12 +1317,12 @@ function closeSelectMenu() {
 </script><script>
   /* ── LOADER ── */
   window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('loader').classList.add('hidden');
-      document.getElementById('main').classList.add('visible');
-      observeReveal();
-    }, 3000);
-  });
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('main').classList.add('visible');
+    if (typeof observeReveal === 'function') observeReveal();
+  }, 3000);
+});
 
   /* ── STARS ── */
   (function() {
