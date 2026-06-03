@@ -4775,34 +4775,29 @@ async function openAdminPanel() {
 </div>
 
 
-<script type="module">
-  (async () => {
-    try {
-      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-      const { getFirestore, doc, setDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyBUz06xBbcjkzt92XpH_G3SmafHVHYzgRw",
-        authDomain: "selenetykosadmin.firebaseapp.com",
-        projectId: "selenetykosadmin",
-        storageBucket: "selenetykosadmin.firebasestorage.app",
-        messagingSenderId: "83818263436",
-        appId: "1:83818263436:web:70aeb20834aef443f01ca9",
-        measurementId: "G-XZF6VERC95"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      window._db = db;
-
-      const ref = doc(db, "stats", "global");
-      setDoc(ref, { views: increment(1) }, { merge: true });
-    } catch(e) {
-      console.warn("Firebase init failed:", e);
-    }
-  })();
+<script>
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js").then(({ initializeApp }) => {
+        import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({ getFirestore, doc, setDoc, increment }) => {
+          try {
+            const app = initializeApp({
+              apiKey: "AIzaSyBUz06xBbcjkzt92XpH_G3SmafHVHYzgRw",
+              authDomain: "selenetykosadmin.firebaseapp.com",
+              projectId: "selenetykosadmin",
+              storageBucket: "selenetykosadmin.firebasestorage.app",
+              messagingSenderId: "83818263436",
+              appId: "1:83818263436:web:70aeb20834aef443f01ca9"
+            });
+            const db = getFirestore(app);
+            window._db = db;
+            setDoc(doc(db, "stats", "global"), { views: increment(1) }, { merge: true });
+          } catch(e) { console.warn("Firebase:", e); }
+        });
+      });
+    }, 500);
+  });
 </script>
-	
 
 
 </body>
