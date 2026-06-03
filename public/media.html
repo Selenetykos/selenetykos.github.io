@@ -229,7 +229,7 @@
 
     .press-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 28px;
       align-items: stretch;
     }
@@ -323,6 +323,29 @@
       border-radius: 3px;
       box-shadow: 0 0 18px rgba(126,184,247,0.35);
     }
+    .cnes-medal {
+      position: absolute;
+      top: 16px; right: 16px; z-index: 2;
+      width: 42px; height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      font-size: 1.12rem;
+      color: #3b2600;
+      background:
+        radial-gradient(circle at 32% 28%, #fff7b0, #fbbf24 42%, #b7791f 100%);
+      border: 1px solid rgba(255,255,227,0.45);
+      box-shadow:
+        0 0 18px rgba(251,191,36,0.38),
+        inset 0 0 10px rgba(255,255,255,0.34);
+    }
+    .cnes-medal::after {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 1px solid rgba(59,38,0,0.22);
+    }
 
     .press-body {
       position: relative;
@@ -410,9 +433,19 @@
       .page-wrap { padding: 0 18px 64px; }
       header { padding-top: 64px; }
       .press-grid { grid-template-columns: 1fr; gap: 22px; }
+      .press-card.cnes-card { grid-column: auto; max-width: none; }
       .press-body p { min-height: auto; }
       nav { gap: 12px; margin-top: 32px; }
       nav a { width: 100%; max-width: 340px; text-align: center; padding: 13px 18px; }
+    }
+
+    @media (min-width: 821px) and (max-width: 1100px) {
+      .press-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .press-card.cnes-card {
+        grid-column: 1 / -1;
+        max-width: 560px;
+        justify-self: center;
+      }
     }
 
     @media (max-width: 520px) {
@@ -430,7 +463,7 @@
   <div id="loader">
     <canvas id="speed-canvas"></canvas>
     <div class="loader-ui">
-      <div class="loader-text">Chargement de notre succès</div>
+      <div class="loader-text">Initialisation de la base lunaire</div>
       <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
     </div>
   </div>
@@ -456,7 +489,7 @@
     </nav>
 
     <div class="press-kicker reveal">
-      <span class="counter" data-target="2">0</span>
+      <span class="counter" data-target="3">0</span>
       <span>articles publiés</span>
     </div>
 
@@ -482,6 +515,19 @@
           <h3>Article — La République des Pyrénées</h3>
           <p>La République des Pyrénées présente notre concept de colonie lunaire imaginé par les élèves de l'Immaculée Conception de Pau.</p>
           <a class="press-link" href="https://www.larepubliquedespyrenees.fr/pyrenees-atlantiques/pau/projet-moon-camp-une-base-lunaire-imaginee-par-des-eleves-de-l-immac-a-pau-29031966.php" target="_blank" rel="noopener noreferrer">Lire l'article</a>
+        </div>
+      </article>
+
+      <article class="press-card reveal cnes-card" style="transition-delay:0.34s">
+        <div class="press-image">
+          <span class="press-badge">PRESS</span>
+          <span class="cnes-medal" aria-label="Coup de coeur du CNES" title="Coup de coeur du CNES">★</span>
+          <img src="art3.webp" alt="Article du CNES sur les apprentis astronautes et Selenetykos">
+        </div>
+        <div class="press-body">
+          <h3>Coup de coeur — CNES</h3>
+          <p>Le CNES met en avant les apprentis astronautes du Moon Camp et distingue Selenetykos comme coup de coeur pour son projet de base lunaire ambitieux, scientifique et imaginatif.</p>
+          <a class="press-link" href="https://esero.fr/actualites/les-apprentis-astronautes-atterrissent-a-la-cite-de-lespace/" target="_blank" rel="noopener noreferrer">Lire l'article</a>
         </div>
       </article>
     </main>
