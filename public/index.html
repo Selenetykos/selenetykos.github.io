@@ -4759,20 +4759,29 @@ async function openAdminPanel() {
 <script>
   window.addEventListener('load', () => {
     setTimeout(() => {
-      import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js").then(({ initializeApp }) => {
+      import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js").then(({ initializeApp, getApps }) => {
         import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({ getFirestore, doc, setDoc, increment }) => {
           try {
-            const app = initializeApp({
+            const firebaseConfig = {
               apiKey: "AIzaSyBUz06xBbcjkzt92XpH_G3SmafHVHYzgRw",
               authDomain: "selenetykosadmin.firebaseapp.com",
               projectId: "selenetykosadmin",
               storageBucket: "selenetykosadmin.firebasestorage.app",
               messagingSenderId: "83818263436",
               appId: "1:83818263436:web:70aeb20834aef443f01ca9"
-            });
+            };
+
+            // ✅ Évite le crash si l'app est déjà init
+            const app = getApps().length === 0
+              ? initializeApp(firebaseConfig)
+              : getApps()[0];
+
             const db = getFirestore(app);
             window._db = db;
+
+            // ✅ Incrémente à chaque chargement, sans condition
             setDoc(doc(db, "stats", "global"), { views: increment(1) }, { merge: true });
+
           } catch(e) { console.warn("Firebase:", e); }
         });
       });
