@@ -10,6 +10,28 @@
   <meta name="description" content="Moon Camp par l'équipe Selenetykos du Lycée L'Immaculée Conception de Pau">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBUz06xBbcjkzt92XpH_G3SmafHVHYzgRw",
+      authDomain: "selenetykosadmin.firebaseapp.com",
+      projectId: "selenetykosadmin",
+      storageBucket: "selenetykosadmin.firebasestorage.app",
+      messagingSenderId: "83818263436",
+      appId: "1:83818263436:web:70aeb20834aef443f01ca9",
+      measurementId: "G-XZF6VERC95"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window._db = db;
+
+    // Incrémente les vues à chaque visite
+    const ref = doc(db, "stats", "global");
+    setDoc(ref, { views: increment(1) }, { merge: true });
+  </script>
   <style>
     :root {
       --moon: #FFFFE3;
@@ -1557,6 +1579,10 @@ function trouverReponse(texte) {
   document.getElementById('chat-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') sendMessage();
   });
+
+
+}
+	
 </script>
 
 <script>	
@@ -1733,6 +1759,7 @@ window.addEventListener('load', () => {
 });
 
 </script>		
+
 
 	
 <!-- ─── HUB JEUX (mdn) ─── -->
@@ -4718,8 +4745,55 @@ window.saveTDScore = async function() {
   });
 })();
 
+// ── ADMIN KONAMI ──
+(function() {
+  const SECRET = 'adminrel';
+  const PASSWORD = 'ton_mot_de_passe';
+  let buffer = '';
+
+  document.addEventListener('keypress', (e) => {
+    buffer += e.key.toLowerCase();
+    if (buffer.length > SECRET.length) buffer = buffer.slice(-SECRET.length);
+    if (buffer === SECRET) {
+      buffer = '';
+      const pwd = prompt('🔐 Mot de passe admin :');
+      if (pwd === PASSWORD) openAdminPanel();
+      else if (pwd !== null) alert('Mauvais mot de passe.');
+    }
+  });
+})();
+
+async function openAdminPanel() {
+  document.getElementById('admin-modal').style.display = 'block';
+  try {
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const snap = await getDoc(doc(window._db, "stats", "global"));
+    if (snap.exists()) document.getElementById('admin-views').textContent = snap.data().views ?? 0;
+  } catch(e) {}
+}
+	
 </script> 
-		  
+
+<div id="admin-modal" style="display:none; position:fixed; inset:0; z-index:99999;
+  background:rgba(10,12,20,0.95); backdrop-filter:blur(12px);
+  font-family:'Orbitron',monospace; color:#FFFFE3; overflow-y:auto;">
+  <div style="max-width:400px; margin:40px auto; padding:32px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
+      <h2 style="font-size:1.2rem; letter-spacing:0.3em; color:#a78bfa;">⚙ PANEL ADMIN</h2>
+      <button onclick="document.getElementById('admin-modal').style.display='none'"
+        style="background:none; border:1px solid rgba(255,255,227,0.2); color:#FFFFE3;
+        padding:8px 16px; cursor:pointer; font-family:'Orbitron',monospace; font-size:0.7rem;">
+        ✕ FERMER
+      </button>
+    </div>
+    <div style="background:rgba(255,255,227,0.05); border:1px solid rgba(167,139,250,0.2);
+      border-radius:4px; padding:32px; text-align:center;">
+      <div style="font-size:3rem; color:#a78bfa;" id="admin-views">—</div>
+      <div style="font-size:0.6rem; letter-spacing:0.3em; opacity:0.6; margin-top:8px;">VUES TOTALES</div>
+    </div>
+  </div>
+	
+</div>
 </body>
 	
 </html>
