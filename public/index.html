@@ -4800,13 +4800,49 @@ async function trackVisitorGeo() {
     const r = await fetch('https://ipapi.co/json/');
     const d = await r.json();
     if (!d.latitude || !d.longitude) return;
-    const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const { doc, setDoc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const key = `v_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
-    await setDoc(doc(window._db, "visitors_live", key), {
+    window._visitorKey = key;
+    window._visitorStartTime = Date.now();
+    const payload = {
       lat: d.latitude, lng: d.longitude,
-      country: d.country_name || '?', city: d.city || '?',
-      ts: serverTimestamp()
+      country: d.country_name || '?',
+      city: d.city || '?',
+      region: d.region || '',
+      postal: d.postal || '',
+      org: d.org || '',
+      ts: serverTimestamp(),
+      loginTime: Date.now(),
+      duration: 0,
+      active: true
+    };
+    // Écrit dans visitors_live ET visitors_weekly
+    await setDoc(doc(window._db, "visitors_live", key), payload);
+    await setDoc(doc(window._db, "visitors_weekly", key), payload);
+
+    // Heartbeat toutes les 15s pour maintenir active=true et màj durée
+    window._geoHeartbeat = setInterval(async () => {
+      if (!window._db || !window._visitorKey) return;
+      try {
+        const elapsed = Math.round((Date.now() - window._visitorStartTime) / 1000);
+        const { doc: d2, updateDoc: upd } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+        await upd(d2(window._db, "visitors_live", window._visitorKey), { active: true, duration: elapsed });
+        await upd(d2(window._db, "visitors_weekly", window._visitorKey), { duration: elapsed });
+      } catch(e) {}
+    }, 15000);
+
+    // À la fermeture : active=false + durée finale
+    window.addEventListener('beforeunload', async () => {
+      clearInterval(window._geoHeartbeat);
+      if (!window._db || !window._visitorKey) return;
+      const elapsed = Math.round((Date.now() - window._visitorStartTime) / 1000);
+      try {
+        const { doc: d3, updateDoc: upd3 } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+        await upd3(d3(window._db, "visitors_live", window._visitorKey), { active: false, duration: elapsed });
+        await upd3(d3(window._db, "visitors_weekly", window._visitorKey), { duration: elapsed });
+      } catch(e) {}
     });
+
   } catch(e) { console.warn('Geo track:', e); }
 }
 
@@ -4853,16 +4889,33 @@ async function loadAdminData() {
     const clicks = clickSnap.exists() ? clickSnap.data() : {};
     renderPageClicksChart(clicks);
 
-    // Visiteurs live (dernières 24h)
+    // Visiteurs live : uniquement ceux avec active===true (session ouverte)
     const visSnap = await getDocs(collection(window._db, "visitors_live"));
-    const visitors = [];
+    const visitorsLive = [];
     const now = Date.now();
     visSnap.forEach(d => {
-      const v = d.data();
+      const v = { id: d.id, ...d.data() };
       const ts = v.ts?.toMillis?.() ?? 0;
-      if (now - ts < 24 * 3600 * 1000) visitors.push(v);
+      // Actif ET dans les 24h (sécurité si heartbeat a raté)
+      if (v.active === true && now - ts < 24 * 3600 * 1000) visitorsLive.push(v);
     });
-    renderWorldMap(visitors);
+
+    // Visiteurs semaine : tous depuis lundi, actifs ou non (ils restent jusqu'à dimanche)
+    const weekSnap = await getDocs(collection(window._db, "visitors_weekly"));
+    const visitorsWeek = [];
+    const weekStart = getWeekStart();
+    // Dimanche prochain = weekStart + 7j
+    const weekEnd = weekStart + 7 * 24 * 3600 * 1000;
+    weekSnap.forEach(d => {
+      const v = { id: d.id, ...d.data() };
+      const ts = v.ts?.toMillis?.() ?? 0;
+      if (ts >= weekStart && ts < weekEnd) visitorsWeek.push(v);
+    });
+
+    window._visitorsLive = visitorsLive;
+    window._visitorsWeek = visitorsWeek;
+    window._mapMode = window._mapMode || 'live';
+    renderMapMode(window._mapMode);
 
   } catch(e) {
     console.error('loadAdminData:', e);
@@ -4895,36 +4948,308 @@ function renderPageClicksChart(clicks) {
   `).join('');
 }
 
-function renderWorldMap(visitors) {
+// ── HELPERS CARTE ──
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getDay(); // 0=dim, 1=lun...
+  const diff = (day === 0 ? -6 : 1 - day); // ramène au lundi
+  const monday = new Date(now);
+  monday.setHours(0,0,0,0);
+  monday.setDate(now.getDate() + diff);
+  return monday.getTime();
+}
+
+function setMapMode(mode) {
+  window._mapMode = mode;
+  // Style boutons
+  const btnLive = document.getElementById('map-btn-live');
+  const btnWeek = document.getElementById('map-btn-week');
+  const lbl = document.getElementById('admin-map-label');
+  if (mode === 'live') {
+    btnLive.style.background = 'rgba(248,113,113,0.3)';
+    btnLive.style.borderColor = '#f87171';
+    btnLive.style.color = '#f87171';
+    btnWeek.style.background = 'rgba(126,184,247,0.06)';
+    btnWeek.style.borderColor = 'rgba(126,184,247,0.35)';
+    btnWeek.style.color = 'rgba(126,184,247,0.6)';
+    if (lbl) lbl.textContent = '🔴 Visiteurs en direct (session active)';
+  } else {
+    btnWeek.style.background = 'rgba(126,184,247,0.2)';
+    btnWeek.style.borderColor = '#7eb8f7';
+    btnWeek.style.color = '#7eb8f7';
+    btnLive.style.background = 'rgba(248,113,113,0.06)';
+    btnLive.style.borderColor = 'rgba(248,113,113,0.35)';
+    btnLive.style.color = 'rgba(248,113,113,0.6)';
+    if (lbl) lbl.textContent = '🗓 Visiteurs France — semaine en cours';
+  }
+  renderMapMode(mode);
+}
+
+function renderMapMode(mode) {
+  if (mode === 'live') {
+    renderLiveMap(window._visitorsLive || []);
+    renderVisitorList(window._visitorsLive || [], 'live');
+  } else {
+    renderFranceMap(window._visitorsWeek || []);
+    renderVisitorList(window._visitorsWeek || [], 'week');
+  }
+}
+
+// ── MODE LIVE : points rouges pulsants (24h) ──
+function renderLiveMap(visitors) {
   const el = document.getElementById('admin-world-map');
   if (!el) return;
-  // SVG world map simplifié + points visiteurs
-  const W = el.offsetWidth || 360, H = Math.round(W * 0.5);
+  const W = el.offsetWidth || 380, H = Math.round(W * 0.5);
 
   function latLngToXY(lat, lng) {
-    const x = (lng + 180) / 360 * W;
-    const y = (90 - lat) / 180 * H;
-    return { x, y };
+    return { x: (lng + 180) / 360 * W, y: (90 - lat) / 180 * H };
   }
 
   const dots = visitors.map(v => {
     const { x, y } = latLngToXY(v.lat, v.lng);
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#a78bfa" opacity="0.9">
-      <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
-      <title>${v.city}, ${v.country}</title>
-    </circle>`;
+    return `<g>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#f87171" opacity="0.18"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#f87171" opacity="0.95">
+        <animate attributeName="r" values="2.5;5;2.5" dur="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.95;0.4;0.95" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <title>${v.city || '?'}, ${v.country || '?'}</title>
+    </g>`;
   }).join('');
 
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;border-radius:4px;background:rgba(0,0,20,0.6);">
       <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Whole_world_-_land_and_oceans_12000.jpg/1280px-Whole_world_-_land_and_oceans_12000.jpg"
-        width="${W}" height="${H}" opacity="0.25" preserveAspectRatio="none"/>
+        width="${W}" height="${H}" opacity="0.22" preserveAspectRatio="none"/>
       ${dots}
-      ${visitors.length === 0 ? `<text x="${W/2}" y="${H/2}" fill="rgba(255,255,227,0.3)" font-size="10" text-anchor="middle" font-family="Orbitron,monospace">Aucun visiteur récent</text>` : ''}
+      ${visitors.length === 0 ? `<text x="${W/2}" y="${H/2}" fill="rgba(255,255,227,0.3)" font-size="10" text-anchor="middle" font-family="Orbitron,monospace">Aucun visiteur (24h)</text>` : ''}
     </svg>
-    <div style="font-size:0.58rem;letter-spacing:0.2em;color:rgba(255,255,227,0.4);text-align:center;margin-top:6px;">${visitors.length} VISITEUR(S) (24H)</div>
+    <div style="font-size:0.58rem;letter-spacing:0.2em;color:rgba(248,113,113,0.6);text-align:center;margin-top:6px;">● ${visitors.length} SESSION(S) ACTIVE(S) EN CE MOMENT</div>
   `;
+}
+
+// ── MODE SEMAINE : carte France SVG précise ──
+function renderFranceMap(visitors) {
+  const el = document.getElementById('admin-world-map');
+  if (!el) return;
+  const W = el.offsetWidth || 380;
+  const H = Math.round(W * 1.05); // France est plus haute que large
+
+  // Bounding box France métropolitaine
+  const FR_LAT_MAX = 51.1, FR_LAT_MIN = 41.3;
+  const FR_LNG_MIN = -5.2, FR_LNG_MAX = 9.7;
+
+  function latLngToXY(lat, lng) {
+    const x = (lng - FR_LNG_MIN) / (FR_LNG_MAX - FR_LNG_MIN) * W;
+    const y = (FR_LAT_MAX - lat) / (FR_LAT_MAX - FR_LAT_MIN) * H;
+    return { x, y };
+  }
+
+  // Contour France simplifié (path SVG approximatif, coord projetées sur notre viewBox)
+  // Points clés du contour métropolitain
+  const francePath = buildFrancePath(W, H, FR_LAT_MAX, FR_LAT_MIN, FR_LNG_MIN, FR_LNG_MAX);
+
+  const dots = visitors.filter(v => {
+    // Ne garder que les visiteurs en France métropolitaine (approximatif)
+    return v.lat >= FR_LAT_MIN && v.lat <= FR_LAT_MAX && v.lng >= FR_LNG_MIN && v.lng <= FR_LNG_MAX;
+  }).map(v => {
+    const { x, y } = latLngToXY(v.lat, v.lng);
+    return `<g>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" fill="#7eb8f7" opacity="0.12"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#7eb8f7" opacity="0.85"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#fff" opacity="0.9"/>
+      <title>${v.city || '?'}</title>
+    </g>`;
+  }).join('');
+
+  const countFr = visitors.filter(v =>
+    v.lat >= FR_LAT_MIN && v.lat <= FR_LAT_MAX && v.lng >= FR_LNG_MIN && v.lng <= FR_LNG_MAX
+  ).length;
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;border-radius:4px;background:rgba(0,0,20,0.7);">
+      <defs>
+        <filter id="glow-fr">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Grille légère -->
+      ${buildGrid(W, H)}
+      <!-- Contour France -->
+      <path d="${francePath}" fill="rgba(126,184,247,0.07)" stroke="rgba(126,184,247,0.45)" stroke-width="1.5" filter="url(#glow-fr)"/>
+      <!-- Villes repères -->
+      ${buildCityMarkers(W, H, FR_LAT_MAX, FR_LAT_MIN, FR_LNG_MIN, FR_LNG_MAX)}
+      <!-- Points visiteurs -->
+      ${dots}
+      ${countFr === 0 ? `<text x="${W/2}" y="${H/2}" fill="rgba(255,255,227,0.3)" font-size="10" text-anchor="middle" font-family="Orbitron,monospace">Aucun visiteur cette semaine</text>` : ''}
+    </svg>
+    <div style="font-size:0.58rem;letter-spacing:0.2em;color:rgba(126,184,247,0.6);text-align:center;margin-top:6px;">🗓 ${countFr} VISITEUR(S) CETTE SEMAINE · RESET LUNDI</div>
+  `;
+}
+
+// ── LISTE VISITEURS ──
+function renderVisitorList(visitors, mode) {
+  const el = document.getElementById('admin-visitor-list-inner');
+  if (!el) return;
+
+  function fmtHour(loginTime) {
+    if (!loginTime) return '—';
+    const d = new Date(loginTime);
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function fmtDate(loginTime) {
+    if (!loginTime) return '';
+    const d = new Date(loginTime);
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+  }
+  function fmtDur(sec) {
+    if (!sec || sec < 1) return '<1s';
+    if (sec < 60) return sec + 's';
+    const m = Math.floor(sec / 60), s = sec % 60;
+    if (m < 60) return m + 'min' + (s ? ' ' + s + 's' : '');
+    const h = Math.floor(m / 60), mm = m % 60;
+    return h + 'h' + (mm ? mm + 'min' : '');
+  }
+  function fmtLocation(v) {
+    const parts = [];
+    if (v.city && v.city !== '?') parts.push(v.city);
+    if (v.postal) parts.push(v.postal);
+    if (v.region && v.region !== v.city) parts.push(v.region);
+    if (v.country && v.country !== '?' && v.country !== 'France') parts.push(v.country);
+    return parts.join(', ') || '—';
+  }
+
+  if (!visitors.length) {
+    el.innerHTML = `<div style="text-align:center;opacity:0.3;padding:16px;font-size:0.6rem;font-family:'Orbitron',monospace;">
+      ${mode === 'live' ? 'Aucun visiteur actif' : 'Aucun visiteur cette semaine'}
+    </div>`;
+    return;
+  }
+
+  // Trier par loginTime décroissant
+  const sorted = [...visitors].sort((a, b) => (b.loginTime || 0) - (a.loginTime || 0));
+
+  el.innerHTML = sorted.map(v => {
+    const isActive = v.active === true;
+    const loc = fmtLocation(v);
+    const heureConn = fmtHour(v.loginTime || v.ts?.toMillis?.());
+    const dateConn = mode === 'week' ? fmtDate(v.loginTime || v.ts?.toMillis?.()) : '';
+    const dur = fmtDur(v.duration || 0);
+    const statusColor = isActive ? '#4ade80' : 'rgba(255,255,227,0.3)';
+    const statusDot = isActive
+      ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;margin-right:4px;flex-shrink:0;animation:blink 1.4s infinite;"></span>`
+      : `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,255,227,0.2);margin-right:4px;flex-shrink:0;"></span>`;
+    const orgText = v.org ? `<div style="font-size:0.48rem;color:rgba(126,184,247,0.4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.org.replace(/^AS\d+\s*/,'').substring(0,28)}</div>` : '';
+    return `<div style="
+      padding:7px 9px;margin-bottom:5px;
+      background:rgba(255,255,255,0.025);
+      border:1px solid ${isActive ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.06)'};
+      border-radius:5px;
+    ">
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
+        ${statusDot}
+        <span style="font-size:0.62rem;color:rgba(255,255,227,0.85);font-family:'Exo 2',sans-serif;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${loc}</span>
+      </div>
+      ${orgText}
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+        <span style="font-size:0.52rem;color:rgba(126,184,247,0.7);">🕐 ${dateConn ? dateConn + ' ' : ''}${heureConn}</span>
+        <span style="font-size:0.52rem;color:${isActive ? '#fbbf24' : 'rgba(255,255,227,0.35)'};">⏱ ${dur}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildGrid(W, H) {
+  let lines = '';
+  for (let i = 1; i < 5; i++) {
+    lines += `<line x1="${W*i/5}" y1="0" x2="${W*i/5}" y2="${H}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+    lines += `<line x1="0" y1="${H*i/5}" x2="${W}" y2="${H*i/5}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+  }
+  return lines;
+}
+
+function buildFrancePath(W, H, LAT_MAX, LAT_MIN, LNG_MIN, LNG_MAX) {
+  // Contour France métropolitaine — ~55 points, sens horaire depuis Dunkerque
+  const pts = [
+    [51.03,2.55],  // Dunkerque
+    [50.95,1.85],  // Calais
+    [50.70,1.62],  // Cap Gris-Nez
+    [50.52,1.57],  // Berck
+    [50.06,1.57],  // Ault
+    [49.90,0.19],  // Fécamp
+    [49.68,-0.37], // Cherbourg (pointe Cotentin)
+    [48.63,-1.82], // Granville
+    [48.64,-2.02], // Saint-Malo
+    [48.32,-4.62], // Brest (Finistère)
+    [47.87,-4.37], // Pointe du Raz
+    [47.72,-3.37], // Lorient
+    [47.50,-2.76], // Quiberon
+    [47.29,-2.49], // La Baule
+    [47.08,-2.20], // Saint-Nazaire
+    [46.87,-2.13], // Noirmoutier
+    [46.35,-1.84], // La Roche-sur-Yon (côte)
+    [45.79,-1.20], // Royan
+    [45.57,-1.07], // Soulac
+    [44.84,-1.18], // Arcachon
+    [43.54,-1.79], // Bayonne
+    [43.37,-1.77], // Hendaye
+    [43.26,-1.45], // Irún (frontière)
+    [42.69,-0.68], // Pyrénées (Oloron)
+    [42.52,0.65],  // Andorre-nord
+    [42.40,2.00],  // Pyrénées orientales
+    [42.34,3.17],  // Cerbère (frontière Espagne)
+    [43.03,6.05],  // Toulon
+    [43.43,6.72],  // Saint-Tropez
+    [43.55,7.00],  // Cannes
+    [43.71,7.38],  // Nice
+    [43.79,7.54],  // Menton (frontière Italie)
+    [44.12,7.62],  // Alpes Maritimes haut
+    [44.67,6.88],  // Gap/Briançon
+    [45.18,6.72],  // Mont-Cenis
+    [45.83,6.87],  // Mont-Blanc côté fr
+    [46.38,6.50],  // Léman (Evian)
+    [46.70,6.15],  // Pontarlier
+    [47.48,7.53],  // Saint-Louis (Bâle)
+    [47.75,7.60],  // Mulhouse
+    [48.97,8.17],  // Lauterbourg
+    [49.45,8.08],  // Wissembourg
+    [49.47,6.85],  // Thionville
+    [49.68,6.35],  // Luxembourg frontière
+    [49.95,5.82],  // Givet
+    [50.14,4.85],  // Charleroi frontière
+    [50.51,4.20],  // Valenciennes
+    [50.72,3.15],  // Roubaix
+    [51.03,2.55],  // Retour Dunkerque
+  ];
+  return pts.map((p, i) => {
+    const x = ((p[1] - LNG_MIN) / (LNG_MAX - LNG_MIN) * W).toFixed(1);
+    const y = ((LAT_MAX - p[0]) / (LAT_MAX - LAT_MIN) * H).toFixed(1);
+    return (i === 0 ? 'M' : 'L') + x + ',' + y;
+  }).join(' ') + ' Z';
+}
+
+function buildCityMarkers(W, H, LAT_MAX, LAT_MIN, LNG_MIN, LNG_MAX) {
+  const cities = [
+    { name:'Paris', lat:48.85, lng:2.35 },
+    { name:'Lyon', lat:45.75, lng:4.83 },
+    { name:'Marseille', lat:43.30, lng:5.37 },
+    { name:'Toulouse', lat:43.60, lng:1.44 },
+    { name:'Bordeaux', lat:44.84, lng:-0.58 },
+    { name:'Nantes', lat:47.22, lng:-1.55 },
+    { name:'Strasbourg', lat:48.57, lng:7.75 },
+    { name:'Lille', lat:50.63, lng:3.06 },
+  ];
+  return cities.map(c => {
+    const x = ((c.lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * W).toFixed(1);
+    const y = ((LAT_MAX - c.lat) / (LAT_MAX - LAT_MIN) * H).toFixed(1);
+    const fs = Math.max(7, W * 0.022);
+    return `<g opacity="0.45">
+      <circle cx="${x}" cy="${y}" r="2" fill="rgba(255,255,227,0.5)"/>
+      <text x="${+x+5}" y="${+y+3}" fill="rgba(255,255,227,0.55)" font-size="${fs}" font-family="Orbitron,monospace">${c.name}</text>
+    </g>`;
+  }).join('');
 }
 
 // ── DRAG & DROP WIDGETS ──
@@ -5073,11 +5398,42 @@ function renderWorldMap(visitors) {
       </div>
     </div>
 
-    <!-- Widget : Carte du monde -->
+    <!-- Widget : Carte France / Live -->
     <div class="admin-widget" draggable="true" data-id="map" style="grid-column: 1 / -1;">
-      <div class="admin-widget-label">🌍 Visiteurs en direct (24h) <span class="drag-hint">⠿ drag</span></div>
-      <div id="admin-world-map" style="min-height:120px;border-radius:4px;overflow:hidden;">
-        <div style="text-align:center;opacity:0.3;padding:20px;font-size:0.65rem;">Chargement de la carte…</div>
+      <div class="admin-widget-label" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span id="admin-map-label">🔴 Visiteurs en direct</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button onclick="setMapMode('live')" id="map-btn-live"
+            style="font-family:'Orbitron',monospace;font-size:0.5rem;letter-spacing:0.12em;padding:5px 10px;border-radius:3px;cursor:pointer;border:1px solid #f87171;background:rgba(248,113,113,0.18);color:#f87171;transition:all 0.2s;">
+            ● LIVE
+          </button>
+          <button onclick="setMapMode('week')" id="map-btn-week"
+            style="font-family:'Orbitron',monospace;font-size:0.5rem;letter-spacing:0.12em;padding:5px 10px;border-radius:3px;cursor:pointer;border:1px solid rgba(126,184,247,0.35);background:rgba(126,184,247,0.06);color:rgba(126,184,247,0.6);transition:all 0.2s;">
+            🗓 SEMAINE
+          </button>
+          <span class="drag-hint" style="font-size:0.5rem;opacity:0.35;letter-spacing:0.1em;">⠿ drag</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+        <!-- Carte -->
+        <div id="admin-world-map" style="flex:1;min-width:200px;min-height:160px;border-radius:4px;overflow:hidden;">
+          <div style="text-align:center;opacity:0.3;padding:20px;font-size:0.65rem;">Chargement de la carte…</div>
+        </div>
+        <!-- Liste visiteurs -->
+        <div id="admin-visitor-list" style="
+          width:240px;flex-shrink:0;
+          background:rgba(0,0,20,0.4);border:1px solid rgba(126,184,247,0.12);border-radius:6px;
+          overflow:hidden;display:flex;flex-direction:column;
+          max-height:420px;
+        ">
+          <div style="padding:8px 12px;border-bottom:1px solid rgba(126,184,247,0.1);
+            font-size:0.5rem;letter-spacing:0.25em;color:rgba(126,184,247,0.6);text-transform:uppercase;">
+            📍 Détail visiteurs
+          </div>
+          <div id="admin-visitor-list-inner" style="overflow-y:auto;flex:1;padding:6px;">
+            <div style="text-align:center;opacity:0.3;padding:16px;font-size:0.6rem;font-family:'Orbitron',monospace;">Chargement…</div>
+          </div>
+        </div>
       </div>
     </div>
 
