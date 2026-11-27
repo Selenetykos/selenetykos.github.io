@@ -5,6 +5,6 @@
 html,body{height:100%;margin:0}body{display:flex;flex-direction:column;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif}
 header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;font-size:15px}header a{color:inherit}small{color:var(--mu)}
 iframe{flex:1;width:100%;border:0;background:#02020f}</style></head><body>
-<header><a href="../">← Retour au site</a><small>Le chargement peut prendre quelques secondes.</small></header>
+<header><a href="../" id="bk">← Retour au site</a><small id="ld">Le chargement peut prendre quelques secondes.</small></header>
 <iframe src="https://selenetykos.onrender.com/jeux.html" title="Mini-jeux Selenetykos" allow="autoplay; fullscreen" allowfullscreen></iframe>
-</body></html>
+<script>try{if(localStorage.getItem('lang')==='en'){document.documentElement.lang='en';document.title='Mini-games — Selenetykos';bk.textContent='← Back to the site';ld.textContent='Loading may take a few seconds.'}}catch(e){}</script></body></html>
