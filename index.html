@@ -1,5 +1,6 @@
-<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Selenetykos — Une base humaine sur Mars</title><meta name="description" content="Selenetykos : projet de base habitée sur Mars, dans le cratère Jezero."><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Selenetykos — Une base humaine sur Mars</title><meta content="Selenetykos : projet de base habitée sur Mars, dans le cratère Jezero." name="description"/><link href="img/logo.png" rel="icon"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><style>
 html{scroll-behavior:smooth}@media(prefers-reduced-motion:reduce){html,.gal{scroll-behavior:auto}}
 body{margin:0}
 .pg{--bg:#F6EFE6;--tx:#1B1612;--mu:#6B5E54;--ln:#1B161426;--ac:#B8470F;--sf:#EDE2D4;
@@ -72,61 +73,57 @@ details p{padding-bottom:22px}
 @media(max-width:900px){.sd{height:340px;width:64px}.gal img{height:340px}.gal figcaption{padding:12px 22px 0}}
 @media(max-width:900px){.nav a{display:none}.w,.top,.s,.ft{padding-left:22px;padding-right:22px}.ph{margin:0 22px}.ph img{height:280px}.top,.s,.two,.rw{grid-template-columns:1fr;gap:24px}.top h1{font-size:56px}.lp{width:calc(100% - 32px);right:16px}.ft{flex-direction:column;align-items:flex-start}}
 
-body{background:#F6EFE6;overflow-x:hidden}body:has(#dk:checked){background:#16110E}.gal{width:100vw;margin-left:calc(50% - 50vw)}</style></head><body>
+body{background:#F6EFE6;overflow-x:hidden}body:has(#dk:checked){background:#16110E}.gal{width:100vw;margin-left:calc(50% - 50vw)}.brand{display:flex;align-items:center;gap:12px}.logo{height:34px;width:auto}
+.lg{border:1px solid var(--ln);background:none;color:var(--tx);border-radius:999px;height:34px;padding:0 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.lg:hover{color:var(--ac)}
+.mis{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ac)}.mis img{height:40px;width:auto}
+.hist{margin:8px 0 8px}
+</style></head><body>
 <div class="pg">
-<input id="dk" class="vh" type="checkbox" aria-label="Mode sombre">
-<header class="hd w" id="top"><a href="#top"><b>Selenetykos</b></a>
-<nav class="nav"><a href="#projet">Le projet</a><a href="#site">Site</a><a href="#habitat">Habitat</a><a href="#recherche">Recherche</a><a href="#apropos">À propos</a>
-<label for="dk" class="tg" title="Mode clair / sombre"><svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10z"/></svg><svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></label></nav></header>
-
-<section class="top"><h1>Selenetykos</h1><div><p>Une base humaine sur Mars, dans le cratère Jezero.</p><a class="ul" href="#projet">Découvrir le projet</a></div></section>
-<figure class="ph" style="margin-bottom:0"><img src="img/base.jpg" alt="Illustration d’une base habitée sur Mars"><figcaption>Fig. 1 — Illustration d’une base martienne. [Source et crédit à préciser]</figcaption></figure>
-
-<section class="s" id="projet"><div><span class="n">01</span><h2>Le projet</h2></div><div>
-<p class="lead" style="color:var(--tx)">Selenetykos conçoit une base habitée sur Mars, pour une présence humaine durable au-delà de la Terre.</p></div></section>
-
-<section class="gal" aria-label="Galerie de la base">
-<input class="vh" type="radio" name="g" id="r1" checked aria-label="Image 1"><input class="vh" type="radio" name="g" id="r2" aria-label="Image 2"><input class="vh" type="radio" name="g" id="r3" aria-label="Image 3">
+<input aria-label="Mode sombre" class="vh" data-fr-aria-label="Mode sombre" data-ta="aria-label" id="dk" type="checkbox"/>
+<header class="hd w" id="top"><a class="brand" href="#top"><img alt="" class="logo" onerror="this.remove()" src="img/logo.png"/><b>Selenetykos</b></a>
+<nav class="nav"><a data-t="Le projet" href="#projet">Le projet</a><a href="#site">Site</a><a href="#habitat">Habitat</a><a data-t="Recherche" href="#recherche">Recherche</a><a data-t="À propos" href="#apropos">À propos</a>
+<button aria-label="Language" class="lg" id="lg" type="button">EN</button><label class="tg" data-fr-title="Mode clair / sombre" data-ta="title" for="dk" title="Mode clair / sombre"><svg aria-hidden="true" class="moon" fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10z"></path></svg><svg aria-hidden="true" class="sun" fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"></path></svg></label></nav></header>
+<section class="top"><h1>Selenetykos</h1><div><div class="mis"><img alt="" onerror="this.remove()" src="img/olympus.png"/><span>Mission Olympus</span></div><p data-t="Une base humaine sur Mars, dans le cratère Jezero.">Une base humaine sur Mars, dans le cratère Jezero.</p><a class="ul" data-t="Découvrir le projet" href="#projet">Découvrir le projet</a></div></section>
+<figure class="ph" style="margin-bottom:0"><img alt="Illustration d’une base habitée sur Mars" data-fr-alt="Illustration d’une base habitée sur Mars" data-ta="alt" src="img/base.jpg"/><figcaption data-t="Fig. 1 — Illustration d’une base martienne. [Source et crédit à préciser]">Fig. 1 — Illustration d’une base martienne. [Source et crédit à préciser]</figcaption></figure>
+<section class="s" id="projet"><div><span class="n">01</span><h2 data-t="Le projet">Le projet</h2></div><div>
+<p class="lead" data-t="Selenetykos conçoit une base habitée sur Mars, pour une présence humaine durable au-delà de la Terre." style="color:var(--tx)">Selenetykos conçoit une base habitée sur Mars, pour une présence humaine durable au-delà de la Terre.</p></div></section>
+<section aria-label="Galerie de la base" class="gal" data-fr-aria-label="Galerie de la base" data-ta="aria-label">
+<input aria-label="Image 1" checked="" class="vh" data-fr-aria-label="Image 1" data-ta="aria-label" id="r1" name="g" type="radio"/><input aria-label="Image 2" class="vh" data-fr-aria-label="Image 2" data-ta="aria-label" id="r2" name="g" type="radio"/><input aria-label="Image 3" class="vh" data-fr-aria-label="Image 3" data-ta="aria-label" id="r3" name="g" type="radio"/>
 <div class="vp"><div class="track">
-<figure><div class="cr"><img src="img/base.jpg" alt="Vue d’ensemble de la base"></div><label class="sd sr" for="r2" aria-label="Image suivante"><svg width="36" height="72" viewBox="0 0 36 72" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 6l20 30L8 66"/></svg></label><figcaption><span>Vue d’ensemble de la base</span><span class="ctl">01 / 03</span></figcaption></figure>
-<figure><div class="cr"><img src="img/jezero.jpg" alt="Le cratère Jezero"></div><label class="sd sl" for="r1" aria-label="Image précédente"><svg width="36" height="72" viewBox="0 0 36 72" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M28 6L8 36l20 30"/></svg></label><label class="sd sr" for="r3" aria-label="Image suivante"><svg width="36" height="72" viewBox="0 0 36 72" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 6l20 30L8 66"/></svg></label><figcaption><span>Le cratère Jezero depuis l’orbite</span><span class="ctl">02 / 03</span></figcaption></figure>
-<figure><div class="cr"><img class="zm" src="img/base.jpg" alt="Détail d’un module"></div><label class="sd sl" for="r2" aria-label="Image précédente"><svg width="36" height="72" viewBox="0 0 36 72" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M28 6L8 36l20 30"/></svg></label><figcaption><span>Détail d’un module</span><span class="ctl">03 / 03</span></figcaption></figure>
+<figure><div class="cr"><img alt="Vue d’ensemble de la base" data-fr-alt="Vue d’ensemble de la base" data-ta="alt" src="img/base.jpg"/></div><label aria-label="Image suivante" class="sd sr" data-fr-aria-label="Image suivante" data-ta="aria-label" for="r2"><svg aria-hidden="true" fill="none" height="72" stroke="currentColor" stroke-width="1.6" viewbox="0 0 36 72" width="36"><path d="M8 6l20 30L8 66"></path></svg></label><figcaption><span data-t="Vue d’ensemble de la base">Vue d’ensemble de la base</span><span class="ctl">01 / 03</span></figcaption></figure>
+<figure><div class="cr"><img alt="Le cratère Jezero" data-fr-alt="Le cratère Jezero" data-ta="alt" src="img/jezero.jpg"/></div><label aria-label="Image précédente" class="sd sl" data-fr-aria-label="Image précédente" data-ta="aria-label" for="r1"><svg aria-hidden="true" fill="none" height="72" stroke="currentColor" stroke-width="1.6" viewbox="0 0 36 72" width="36"><path d="M28 6L8 36l20 30"></path></svg></label><label aria-label="Image suivante" class="sd sr" data-fr-aria-label="Image suivante" data-ta="aria-label" for="r3"><svg aria-hidden="true" fill="none" height="72" stroke="currentColor" stroke-width="1.6" viewbox="0 0 36 72" width="36"><path d="M8 6l20 30L8 66"></path></svg></label><figcaption><span data-t="Le cratère Jezero depuis l’orbite">Le cratère Jezero depuis l’orbite</span><span class="ctl">02 / 03</span></figcaption></figure>
+<figure><div class="cr"><img alt="Détail d’un module" class="zm" data-fr-alt="Détail d’un module" data-ta="alt" src="img/base.jpg"/></div><label aria-label="Image précédente" class="sd sl" data-fr-aria-label="Image précédente" data-ta="aria-label" for="r2"><svg aria-hidden="true" fill="none" height="72" stroke="currentColor" stroke-width="1.6" viewbox="0 0 36 72" width="36"><path d="M28 6L8 36l20 30"></path></svg></label><figcaption><span data-t="Détail d’un module">Détail d’un module</span><span class="ctl">03 / 03</span></figcaption></figure>
 </div></div></section>
-
-<section class="s" id="site" style="margin-top:0"><div><span class="n">02</span><h2>Le site d’implantation</h2></div>
-<div class="two"><figure style="margin:0"><img src="img/jezero.jpg" alt="Le cratère Jezero vu depuis l’orbite"><figcaption>Fig. 2 — Le cratère Jezero vu depuis l’orbite. Le delta fossile est visible sur le bord gauche. [Crédit à préciser]</figcaption></figure>
-<div><p style="margin-bottom:24px">Jezero abrite un delta fossile, trace d’un ancien lac. C’est aussi le site d’atterrissage du rover Perseverance.</p>
-<dl><div><dt>Coordonnées</dt><dd>≈ 18,4° N · 77,6° E</dd></div><div><dt>Diamètre</dt><dd>≈ 45 km</dd></div><div style="border-bottom:1px solid var(--ln)"><dt>Atterrissage de Perseverance</dt><dd>2021</dd></div></dl></div></div></section>
-
-<section class="s" id="habitat" style="margin-top:0"><div><span class="n">03</span><h2>Habitat et systèmes</h2></div><div>
-<div class="rw"><b>Modules</b><span>Architecture et organisation de la base</span></div>
-<div class="rw"><b>Énergie</b><span>Production et stockage</span></div>
-<div class="rw"><b>Eau</b><span>Ressources et recyclage</span></div>
-<div class="rw"><b>Oxygène</b><span>Air respirable</span></div>
-<div class="rw"><b>Protection</b><span>Face à l’environnement martien</span></div>
-<div class="v"><h3>Vue 3D</h3><div class="box"><div><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7zM12 12l9-5M12 12v10M12 12L3 7"/></svg><br>Modèle 3D à ajouter<br><small>Glisser pour tourner · molette pour zoomer</small></div></div><figcaption>Fig. 3 — Modèle 3D de la base.</figcaption></div></div></section>
-
-<section class="s" id="recherche" style="margin-top:0"><div><span class="n">04</span><h2>Recherche</h2></div><div>
-<details open><summary>Pourquoi le cratère Jezero ?</summary><p>Jezero abrite un delta fossile, trace d’un ancien lac, et a accueilli le rover Perseverance en 2021. Cette partie détaillera les critères qui ont guidé le choix du site.</p></details>
-<details><summary>Comment produire l’énergie ?</summary><p>Production et stockage d’énergie pour la base : choix des sources et dimensionnement.</p></details>
-<details><summary>Eau et oxygène</summary><p>Approvisionnement en eau, recyclage et production d’air respirable.</p></details>
-<details><summary>Ressources locales</summary><p>Ce que la base peut tirer du sol et de l’atmosphère martiens.</p></details>
-<details><summary>Protection de l’habitat</summary><p>Réponses de conception face à l’environnement martien.</p></details>
-<details><summary>Architecture des modules</summary><p>Organisation des espaces de vie, de travail et de recherche.</p></details>
+<section class="s" id="site" style="margin-top:0"><div><span class="n">02</span><h2 data-t="Le site d’implantation">Le site d’implantation</h2></div>
+<div class="two"><figure style="margin:0"><img alt="Le cratère Jezero vu depuis l’orbite" data-fr-alt="Le cratère Jezero vu depuis l’orbite" data-ta="alt" src="img/jezero.jpg"/><figcaption data-t="Fig. 2 — Le cratère Jezero vu depuis l’orbite. Le delta fossile est visible sur le bord gauche. [Crédit à préciser]">Fig. 2 — Le cratère Jezero vu depuis l’orbite. Le delta fossile est visible sur le bord gauche. [Crédit à préciser]</figcaption></figure>
+<div><p data-t="Jezero abrite un delta fossile, trace d’un ancien lac. C’est aussi le site d’atterrissage du rover Perseverance." style="margin-bottom:24px">Jezero abrite un delta fossile, trace d’un ancien lac. C’est aussi le site d’atterrissage du rover Perseverance.</p>
+<dl><div><dt data-t="Coordonnées">Coordonnées</dt><dd data-t="≈ 18,4° N · 77,6° E">≈ 18,4° N · 77,6° E</dd></div><div><dt data-t="Diamètre">Diamètre</dt><dd>≈ 45 km</dd></div><div style="border-bottom:1px solid var(--ln)"><dt data-t="Atterrissage de Perseverance">Atterrissage de Perseverance</dt><dd>2021</dd></div></dl></div></div></section>
+<section class="s" id="habitat" style="margin-top:0"><div><span class="n">03</span><h2 data-t="Habitat et systèmes">Habitat et systèmes</h2></div><div>
+<div class="rw"><b>Modules</b><span data-t="Architecture et organisation de la base">Architecture et organisation de la base</span></div>
+<div class="rw"><b data-t="Énergie">Énergie</b><span data-t="Production et stockage">Production et stockage</span></div>
+<div class="rw"><b data-t="Eau">Eau</b><span data-t="Ressources et recyclage">Ressources et recyclage</span></div>
+<div class="rw"><b data-t="Oxygène">Oxygène</b><span data-t="Air respirable">Air respirable</span></div>
+<div class="rw"><b>Protection</b><span data-t="Face à l’environnement martien">Face à l’environnement martien</span></div>
+<div class="v"><h3 data-t="Vue 3D">Vue 3D</h3><div class="box"><div><svg aria-hidden="true" fill="none" height="40" stroke="currentColor" stroke-width="1.2" viewbox="0 0 24 24" width="40"><path d="M12 2l9 5v10l-9 5-9-5V7zM12 12l9-5M12 12v10M12 12L3 7"></path></svg><br/><span data-t="Modèle 3D à ajouter">Modèle 3D à ajouter</span><br/><small data-t="Glisser pour tourner · molette pour zoomer">Glisser pour tourner · molette pour zoomer</small></div></div><figcaption data-t="Fig. 3 — Modèle 3D de la base.">Fig. 3 — Modèle 3D de la base.</figcaption></div></div></section>
+<section class="s" id="recherche" style="margin-top:0"><div><span class="n">04</span><h2 data-t="Recherche">Recherche</h2></div><div>
+<details open=""><summary data-t="Pourquoi le cratère Jezero ?">Pourquoi le cratère Jezero ?</summary><p data-t="Jezero abrite un delta fossile, trace d’un ancien lac, et a accueilli le rover Perseverance en 2021. Cette partie détaillera les critères qui ont guidé le choix du site.">Jezero abrite un delta fossile, trace d’un ancien lac, et a accueilli le rover Perseverance en 2021. Cette partie détaillera les critères qui ont guidé le choix du site.</p></details>
+<details><summary data-t="Comment produire l’énergie ?">Comment produire l’énergie ?</summary><p data-t="Production et stockage d’énergie pour la base : choix des sources et dimensionnement.">Production et stockage d’énergie pour la base : choix des sources et dimensionnement.</p></details>
+<details><summary data-t="Eau et oxygène">Eau et oxygène</summary><p data-t="Approvisionnement en eau, recyclage et production d’air respirable.">Approvisionnement en eau, recyclage et production d’air respirable.</p></details>
+<details><summary data-t="Ressources locales">Ressources locales</summary><p data-t="Ce que la base peut tirer du sol et de l’atmosphère martiens.">Ce que la base peut tirer du sol et de l’atmosphère martiens.</p></details>
+<details><summary data-t="Protection de l’habitat">Protection de l’habitat</summary><p data-t="Réponses de conception face à l’environnement martien.">Réponses de conception face à l’environnement martien.</p></details>
+<details><summary data-t="Architecture des modules">Architecture des modules</summary><p data-t="Organisation des espaces de vie, de travail et de recherche.">Organisation des espaces de vie, de travail et de recherche.</p></details>
 </div></section>
-
-<section class="s" id="apropos" style="margin-top:0"><div><span class="n">05</span><h2>À propos</h2></div><div>
-<p>Selenetykos est né l’an dernier sous une autre forme, avec une autre équipe et un autre univers. Cette version en est la suite.</p>
-<a class="ul" href="https://selenetykos.github.io/ancien/">Voir l’ancien site</a></div></section>
-
-<footer class="ft w"><span>© Selenetykos · Équipe projet</span>
-<form class="code" id="gate"><input id="gc" type="password" name="code" autocomplete="off" placeholder="Code d’accès" aria-label="Code d’accès"><button type="submit">OK</button></form></footer>
-
-<input id="lr" class="vh" type="checkbox" checked aria-label="Ouvrir LIREN">
-<label for="lr" class="lb"><i>L</i>LIREN</label>
-<div class="lp"><div class="lh"><div>Liren IA<small>Assistante du projet</small></div><label for="lr" style="cursor:pointer;color:var(--mu);font-weight:400">Fermer</label></div>
-<div class="lm"><div class="bub">Bonjour ! Je suis LIREN, l’IA de l’équipe Selenetykos. Posez-moi vos questions sur le projet.</div><div class="chips"><span>Pourquoi Jezero ?</span><span>Où en est le projet ?</span></div></div>
-<div class="li"><input placeholder="Écrire à LIREN…" aria-label="Message"><button type="button">Envoyer</button></div></div>
+<section class="s" id="apropos" style="margin-top:0"><div><span class="n">05</span><h2 data-t="À propos">À propos</h2></div><div>
+<p data-t="Selenetykos est la suite de la mission Aetheritykos, menée l’an dernier. La Lune sert, entre autres, de tremplin vers Mars : ce nouveau projet prolonge donc naturellement le précédent. C’est pourquoi le nom et l’IA, LIREN, sont restés les mêmes.">Selenetykos est la suite de la mission Aetheritykos, menée l’an dernier. La Lune sert, entre autres, de tremplin vers Mars : ce nouveau projet prolonge donc naturellement le précédent. C’est pourquoi le nom et l’IA, LIREN, sont restés les mêmes.</p>
+<div class="hist"><div class="rw"><b>Mission Aetheritykos</b><span data-t="L’an dernier · La Lune">L’an dernier · La Lune</span></div><div class="rw"><b>Mission Olympus</b><span data-t="Aujourd’hui · Mars">Aujourd’hui · Mars</span></div></div>
+<a class="ul" data-t="Voir l’ancien site" href="https://selenetykos.github.io/ancien/">Voir l’ancien site</a></div></section>
+<footer class="ft w"><span data-t="© Selenetykos · Équipe projet">© Selenetykos · Équipe projet</span>
+<form class="code" id="gate"><input aria-label="Code d’accès" autocomplete="off" data-fr-aria-label="Code d’accès" data-fr-placeholder="Code d’accès" data-ta="aria-label,placeholder" id="gc" name="code" placeholder="Code d’accès" type="password"/><button type="submit">OK</button></form></footer>
+<input aria-label="Ouvrir LIREN" checked="" class="vh" data-fr-aria-label="Ouvrir LIREN" data-ta="aria-label" id="lr" type="checkbox"/>
+<label class="lb" for="lr"><i>L</i>LIREN</label>
+<div class="lp"><div class="lh"><div>Liren IA<small data-t="Assistante du projet">Assistante du projet</small></div><label data-t="Fermer" for="lr" style="cursor:pointer;color:var(--mu);font-weight:400">Fermer</label></div>
+<div class="lm"><div class="bub" data-t="Bonjour ! Je suis LIREN, l’IA de l’équipe Selenetykos. Posez-moi vos questions sur le projet.">Bonjour ! Je suis LIREN, l’IA de l’équipe Selenetykos. Posez-moi vos questions sur le projet.</div><div class="chips"><span data-t="Pourquoi Jezero ?">Pourquoi Jezero ?</span><span data-t="Où en est le projet ?">Où en est le projet ?</span></div></div>
+<div class="li"><input aria-label="Message" data-fr-placeholder="Écrire à LIREN…" data-ta="placeholder" placeholder="Écrire à LIREN…"/><button data-t="Envoyer" type="button">Envoyer</button></div></div>
 </div>
 <script>
 (function(){
@@ -151,6 +148,23 @@ document.getElementById('gate').addEventListener('submit',async function(e){
  var x=Array.from(new Uint8Array(b)).map(function(n){return n.toString(16).padStart(2,'0')}).join('');
  if(x===HASH){try{sessionStorage.setItem('mj','1')}catch(e){}location.href='mini-jeux/'}
  else{i.value='';i.placeholder='Code incorrect'}});
+})();
+</script>
+
+<script>
+(function(){
+var EN={"Le projet": "The project", "Recherche": "Research", "À propos": "About", "Une base humaine sur Mars, dans le cratère Jezero.": "A human base on Mars, in Jezero crater.", "Découvrir le projet": "Discover the project", "Fig. 1 — Illustration d’une base martienne. [Source et crédit à préciser]": "Fig. 1 — Illustration of a Martian base. [Source and credit to be confirmed]", "Selenetykos conçoit une base habitée sur Mars, pour une présence humaine durable au-delà de la Terre.": "Selenetykos is designing a crewed base on Mars, for a lasting human presence beyond Earth.", "Vue d’ensemble de la base": "Overview of the base", "Le cratère Jezero depuis l’orbite": "Jezero crater from orbit", "Détail d’un module": "Detail of a module", "Le site d’implantation": "The settlement site", "Fig. 2 — Le cratère Jezero vu depuis l’orbite. Le delta fossile est visible sur le bord gauche. [Crédit à préciser]": "Fig. 2 — Jezero crater seen from orbit. The fossil delta is visible on the left edge. [Credit to be confirmed]", "Jezero abrite un delta fossile, trace d’un ancien lac. C’est aussi le site d’atterrissage du rover Perseverance.": "Jezero holds a fossil delta, the trace of an ancient lake. It is also the landing site of the Perseverance rover.", "Coordonnées": "Coordinates", "≈ 18,4° N · 77,6° E": "≈ 18.4° N · 77.6° E", "Diamètre": "Diameter", "Atterrissage de Perseverance": "Perseverance landing", "Habitat et systèmes": "Habitat and systems", "Architecture et organisation de la base": "Base architecture and layout", "Énergie": "Energy", "Production et stockage": "Production and storage", "Eau": "Water", "Ressources et recyclage": "Resources and recycling", "Oxygène": "Oxygen", "Air respirable": "Breathable air", "Face à l’environnement martien": "Facing the Martian environment", "Vue 3D": "3D view", "Modèle 3D à ajouter": "3D model to be added", "Glisser pour tourner · molette pour zoomer": "Drag to rotate · scroll to zoom", "Fig. 3 — Modèle 3D de la base.": "Fig. 3 — 3D model of the base.", "Pourquoi le cratère Jezero ?": "Why Jezero crater?", "Jezero abrite un delta fossile, trace d’un ancien lac, et a accueilli le rover Perseverance en 2021. Cette partie détaillera les critères qui ont guidé le choix du site.": "Jezero holds a fossil delta, the trace of an ancient lake, and was the landing site of the Perseverance rover in 2021. This section will detail the criteria behind the choice of site.", "Comment produire l’énergie ?": "How do we produce energy?", "Production et stockage d’énergie pour la base : choix des sources et dimensionnement.": "Energy production and storage for the base: choice of sources and sizing.", "Eau et oxygène": "Water and oxygen", "Approvisionnement en eau, recyclage et production d’air respirable.": "Water supply, recycling and production of breathable air.", "Ressources locales": "Local resources", "Ce que la base peut tirer du sol et de l’atmosphère martiens.": "What the base can draw from Martian soil and atmosphere.", "Protection de l’habitat": "Protecting the habitat", "Réponses de conception face à l’environnement martien.": "Design responses to the Martian environment.", "Architecture des modules": "Module architecture", "Organisation des espaces de vie, de travail et de recherche.": "Layout of living, working and research spaces.", "Selenetykos est la suite de la mission Aetheritykos, menée l’an dernier. La Lune sert, entre autres, de tremplin vers Mars : ce nouveau projet prolonge donc naturellement le précédent. C’est pourquoi le nom et l’IA, LIREN, sont restés les mêmes.": "Selenetykos is the sequel to the Aetheritykos mission, carried out last year. The Moon serves, among other things, as a stepping stone to Mars, so this new project naturally continues the previous one. That is why the name and the AI, LIREN, have stayed the same.", "L’an dernier · La Lune": "Last year · The Moon", "Aujourd’hui · Mars": "Today · Mars", "Voir l’ancien site": "See the previous site", "© Selenetykos · Équipe projet": "© Selenetykos · Project team", "Assistante du projet": "Project assistant", "Fermer": "Close", "Bonjour ! Je suis LIREN, l’IA de l’équipe Selenetykos. Posez-moi vos questions sur le projet.": "Hello! I’m LIREN, the AI of the Selenetykos team. Ask me anything about the project.", "Pourquoi Jezero ?": "Why Jezero?", "Où en est le projet ?": "Where does the project stand?", "Envoyer": "Send", "Mode sombre": "Dark mode", "Mode clair / sombre": "Light / dark mode", "Illustration d’une base habitée sur Mars": "Illustration of a crewed base on Mars", "Galerie de la base": "Base gallery", "Image 1": "Image 1", "Image 2": "Image 2", "Image 3": "Image 3", "Image suivante": "Next image", "Image précédente": "Previous image", "Le cratère Jezero": "Jezero crater", "Le cratère Jezero vu depuis l’orbite": "Jezero crater seen from orbit", "Code d’accès": "Access code", "Ouvrir LIREN": "Open LIREN", "Écrire à LIREN…": "Write to LIREN…"};
+function setLang(l){
+ document.documentElement.lang=l;
+ document.querySelectorAll('[data-t]').forEach(function(e){var k=e.getAttribute('data-t');e.textContent=l==='en'?(EN[k]||k):k});
+ document.querySelectorAll('[data-ta]').forEach(function(e){e.getAttribute('data-ta').split(',').forEach(function(a){var k=e.getAttribute('data-fr-'+a);e.setAttribute(a,l==='en'?(EN[k]||k):k)})});
+ document.getElementById('lg').textContent=l==='en'?'FR':'EN';
+ document.title=l==='en'?'Selenetykos — A human base on Mars':'Selenetykos — Une base humaine sur Mars';
+ try{localStorage.setItem('lang',l)}catch(e){}}
+var q=new URLSearchParams(location.search).get('lang'),st=null;try{st=localStorage.getItem('lang')}catch(e){}
+var l=(q==='en'||q==='fr')?q:(st||((navigator.language||'fr').slice(0,2)==='fr'?'fr':'en'));
+document.getElementById('lg').addEventListener('click',function(){setLang(document.documentElement.lang==='en'?'fr':'en')});
+setLang(l);
 })();
 </script>
 </body></html>
