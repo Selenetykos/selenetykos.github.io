@@ -8,6 +8,7 @@ const app = express();
 // --- CONFIGURATION ---
 app.use(cors());
 app.use(express.json());
+require('./liren')(app);
 
 // Session storage (en mémoire)
 const sessions = new Map();
